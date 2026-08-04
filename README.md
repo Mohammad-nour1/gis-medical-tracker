@@ -1,122 +1,109 @@
 # GIS Medical Dashboard
 
-Real-time GIS medical resource monitoring for Syrian health sector managers.
+لوحة مراقبة طبية تفاعلية لمديري القطاع الصحي في سوريا
+المراقبة بالوقت الفعلي لاشغال المشافي وتوجيه الاسعاف عبر خريطة GIS
 
-## Local Setup
+## 1 تشغيل محلي
 
-1. Install dependencies:
+1 انسخ المشروع
+2 نفذ `npm install`
+3 انسخ `.env.example` الى `.env.local` وعبّي `DATABASE_URL`
+4 نفذ ملفات الـ SQL بالترتيب على PostgreSQL/PostGIS
+   - `infrastructure/database/migrations/001_init.sql`
+   - `infrastructure/database/migrations/002_ambulance_location_snapshots.sql`
+5 شغل المشروع بـ `npm run dev`
+6 افتح `http://localhost:3000`
+7 للاختبارات نفذ `npm test`
 
-```bash
-npm install
-```
+## 2 الهدف من المشروع
 
-2. Configure environment:
+1 بناء لوحة مراقبة حية للموارد الطبية
+2 عرض المنشآت والاسعاف على خريطة سوريا
+3 حساب الاشغال وتحديد الحالة RED/GREEN حسب المخطط الرسمي
+4 ارسال تنبيهات عند الحالات الحرجة
+5 السماح للمدير بتوجيه يدوي لاسعاف
+6 الرجوع زمنيا لسجلات الاشغال وتوزع السيارات
 
-```bash
-cp .env.example .env.local
-```
+## 3 شو عملت
 
-Set `DATABASE_URL` to your PostgreSQL/Supabase connection string with PostGIS enabled.
+1 فصلت المشروع لطبقات واضحة
+   - `core` للمنطق والخوارزمية
+   - `infrastructure` لقاعدة البيانات والبث
+   - `interface` لـ Express وSocket.io
+   - `frontend` للوحة التحكم
+2 حولت الفلوتشارت لحالات استخدام منفصلة وقابلة للاختبار
+3 ربطت PostGIS لحساب اقرب اسعاف عبر `ST_Distance`
+4 بنيت بث حي عبر Socket.io
+5 بنيت لوحة فيها خريطة وتجميع نقاط وفلاتر وتنبيهات وTime Machine وتوجيه يدوي
+6 بنيت Simulation API يولد طوارئ عشوائية ويحدث قاعدة البيانات ويبث للمتصفح
 
-3. Apply schema and seed:
+## 4 ليش استخدمت هاي التقنيات
 
-Run these SQL files against the database in order:
+1 Next.js + TypeScript
+   - للواجهة وطبقات التطبيق بنوع آمن
+2 Express.js
+   - لانه مطلوب كـ backend رسمي ونقاط الـ API رقيقة تستدعي الـ use-cases فقط
+3 PostgreSQL + PostGIS
+   - للتعامل الاحترافي مع الاحداثيات المكانية
+4 Socket.io
+   - لانه مطلوب لاتصال مستمر وبث تحديثات الموقع والحالة لحظة بلحظة
+5 `react-med-geo-streamer@2.1`
+   - لادارة حالة WebSocket في الواجهة حصرا بدون الاعتماد على React state لمسار البث الحي
+6 Hexagonal Architecture
+   - لعزل منطق التوجيه الطبي عن تفاصيل قواعد البيانات والاتصال الحي
 
-- `infrastructure/database/migrations/001_init.sql`
-- `infrastructure/database/migrations/002_ambulance_location_snapshots.sql`
+## 5 المشاكل لي واجهتها وحليتها
 
-4. Start the application:
+1 تناقض Serverless على Vercel مع اتصال Socket.io المستمر
+   - الحل انشغلت بسيرفر Node موحّد `server.ts` يجمع Express وSocket.io وNext معا
+   - الـ Adapter pattern عبر `RealtimeBroadcaster` يخلي مزود البث قابل للتبديل بدون كسر الـ core
+2 مكتبة `react-med-geo-streamer` غير موجودة على npm
+   - عملت package محلي بنفس الاسم والاصدار `2.1.0` داخل `packages/react-med-geo-streamer`
+   - لفّيت فيها `socket.io-client` وخليت الواجهة تاخذ البث الحي منها فقط
+3 مسار GREEN بالمخطط كان فيه طريق مختصر ملغى
+   - طبقت القاعدة حرفيا وما في رجوع مباشر من GREEN للحساب بدون المرور على AssignRouteAndDispatch
+4 Time Machine كان ناقص توزع السيارات التاريخي
+   - اضفت جدول snapshots لمواقع الاسعاف وربطته مع استرجاع التاريخ
+5 احتجت فصل واضح بين بيانات السيرفر والبث الحي وحالة الواجهة
+   - البث الحي عبر `react-med-geo-streamer`
+   - الفلاتر والـ date picker عبر React state عادي
+   - بيانات التحميل الاولية عبر API عادي
 
-```bash
-npm run dev
-```
+## 6 Architectural Decisions
 
-Open `http://localhost:3000`.
+1 ليش Hexagonal
+   - الخوارزمية حرجة وما لازم تتلوث بتفاصيل pg او socket.io
+   - اسهل للاختبار وللتوسعة لاحقا
+2 كيف حليت Serverless + Persistent Connection
+   - Socket.io يحتاج process مستمر لذلك التشغيل الرسمي عبر `server.ts`
+   - للاستضافة الحقيقية استخدم مضيف Node يدعم اتصال مستمر
+   - Vercel مناسب للواجهة والـ cron بينما البث الحي يحتاج runtime مستمر
+3 ليش shim بدل المكتبة المفقودة
+   - التاسك فرض اسم واصدار محددين والمكتبة غير منشورة
+   - الشيم يحقق الالتزام بالاسم والاصدار ويبقي مسار البث قابلا للاستبدال لاحقا
 
-5. Run tests:
+## 7 الـ API الرئيسية
 
-```bash
-npm test
-```
+1 `GET /api/facilities`
+2 `GET /api/ambulances`
+3 `GET /api/history`
+4 `POST /api/monitoring/run`
+5 `POST /api/simulation/tick`
+6 `POST /api/simulation/start`
+7 `POST /api/simulation/stop`
+8 `POST /api/dispatch/manual`
 
-## Architecture
+## 8 احداث البث الحي
 
-Hexagonal layout with clear boundaries:
+1 `occupancy-critical`
+2 `status-changed`
+3 `ambulance-dispatched`
+4 `ambulance-location`
+5 `simulation-tick`
 
-- `core/` entities, ports, use-cases, domain errors, simulation logic
-- `infrastructure/` PostgreSQL/PostGIS adapters and Socket.io broadcaster
-- `interface/http/` Express routes, validation, DTOs, error middleware
-- `interface/websocket-gateway/` Socket.io gateway
-- `frontend/` dashboard features (`map`, `alerts`, `filters`, `time-machine`, `dispatch`)
-- `packages/react-med-geo-streamer/` required stream state library `2.1.0`
+## 9 ملاحظات التسليم
 
-`core` does not import from `infrastructure` or `interface`.
-
-## Flowchart Compliance
-
-Monitoring cycle is literal:
-
-1. `CalculateAvailableBeds`
-2. `EvaluateOccupancyStatus` (`occupancy > 90%`)
-3. RED: set status, trigger alert, find nearest ambulance with PostGIS `ST_Distance`, assign route and dispatch
-4. GREEN: set status, assign route and dispatch with no ambulance
-5. Continue via monitoring/simulation loop
-
-GREEN never returns directly to calculate. Both paths pass through `AssignRouteAndDispatch`.
-
-## Architectural Decisions
-
-### Vercel Serverless + Socket.io persistent connection
-
-Socket.io requires a persistent Node process. The official runtime is custom `server.ts`:
-
-- Express handles `/api/*`
-- Socket.io attaches to the same HTTP server
-- Next.js renders the dashboard
-
-For production with true persistent TCP connections, deploy `server.ts` on a Node host that keeps the process alive. Vercel cron can still call `/api/monitoring/run`.
-
-### react-med-geo-streamer@2.1.0
-
-The package is not published on npm.
-
-Local package `packages/react-med-geo-streamer@2.1.0` wraps `socket.io-client` and exposes stream hooks through `useSyncExternalStore`.
-
-Rules enforced by implementation:
-
-- live socket connection, events, alerts, ambulance live updates, facility live status updates use `react-med-geo-streamer` only
-- UI-only state (filters, date picker, modal/select state) uses React local state
-- Ably and Zustand are not used
-
-### Express as official backend
-
-Next API Routes are not the backend. All APIs are registered in Express (`interface/http/routes/registerRoutes.ts`).
-
-## API
-
-- `GET /api/facilities?type=&governorate=&status=`
-- `GET /api/ambulances?status=`
-- `GET /api/history?timestamp=&facilityId=`
-  - with `facilityId`: closest occupancy snapshot
-  - without `facilityId`: `{ occupancySnapshots, ambulanceSnapshots }`
-- `GET|POST /api/monitoring/run`
-- `POST /api/simulation/tick`
-- `POST /api/simulation/start`
-- `POST /api/simulation/stop`
-- `POST /api/dispatch/manual`
-
-## Realtime Events
-
-- `occupancy-critical`
-- `status-changed`
-- `ambulance-dispatched`
-- `ambulance-location`
-- `simulation-tick`
-
-## Quality Guarantees
-
-- centralized Express error middleware
-- request validation for query/body inputs
-- response DTOs for stable contracts
-- design tokens for UI consistency
-- unit tests for occupancy logic, RED/GREEN flowchart paths, and validation
+1 المستودع
+   - https://github.com/Mohammad-nour1/gis-medical-tracker
+2 Live Demo
+   - يتم اضافته بعد النشر على مضيف Node مستمر
