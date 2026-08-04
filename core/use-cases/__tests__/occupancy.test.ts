@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { Facility } from '../../entities/Facility'
+import { EvaluateOccupancyStatus, DefaultOccupancyThresholdStrategy } from '../EvaluateOccupancyStatus'
+import { CalculateAvailableBeds } from '../CalculateAvailableBeds'
+
+const sampleFacility = new Facility(
+  'facility-1',
+  'Test Hospital',
+  'hospital',
+  'Damascus',
+  100,
+  95,
+  { latitude: 33.5, longitude: 36.3 },
+  'GREEN'
+)
+
+test('CalculateAvailableBeds returns total minus occupied', () => {
+  const useCase = new CalculateAvailableBeds()
+  assert.equal(useCase.execute(sampleFacility), 5)
+})
+
+test('EvaluateOccupancyStatus marks RED above 90 percent', () => {
+  const useCase = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy(90))
+  assert.equal(useCase.execute(sampleFacility), 'RED')
+})
+
+test('EvaluateOccupancyStatus marks GREEN at or below 90 percent', () => {
+  const useCase = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy(90))
+  const greenFacility = new Facility(
+    sampleFacility.id,
+    sampleFacility.name,
+    sampleFacility.type,
+    sampleFacility.governorate,
+    100,
+    90,
+    sampleFacility.location,
+    'GREEN'
+  )
+  assert.equal(useCase.execute(greenFacility), 'GREEN')
+})

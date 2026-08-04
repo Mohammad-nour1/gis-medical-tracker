@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GIS Medical Dashboard
 
-## Getting Started
+Real-time GIS medical resource monitoring for Syrian health sector managers.
 
-First, run the development server:
+## Local Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Configure environment:
+
+```bash
+cp .env.example .env.local
+```
+
+Set `DATABASE_URL` to your PostgreSQL/Supabase connection string with PostGIS enabled.
+
+3. Apply schema and seed:
+
+Run these SQL files against the database in order:
+
+- `infrastructure/database/migrations/001_init.sql`
+- `infrastructure/database/migrations/002_ambulance_location_snapshots.sql`
+
+4. Start the application:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+5. Run tests:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test
+```
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+Hexagonal layout with clear boundaries:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `core/` entities, ports, use-cases, domain errors, simulation logic
+- `infrastructure/` PostgreSQL/PostGIS adapters and Socket.io broadcaster
+- `interface/http/` Express routes, validation, DTOs, error middleware
+- `interface/websocket-gateway/` Socket.io gateway
+- `frontend/` dashboard features (`map`, `alerts`, `filters`, `time-machine`, `dispatch`)
+- `packages/react-med-geo-streamer/` required stream state library `2.1.0`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`core` does not import from `infrastructure` or `interface`.
 
-## Deploy on Vercel
+## Flowchart Compliance
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Monitoring cycle is literal:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. `CalculateAvailableBeds`
+2. `EvaluateOccupancyStatus` (`occupancy > 90%`)
+3. RED: set status, trigger alert, find nearest ambulance with PostGIS `ST_Distance`, assign route and dispatch
+4. GREEN: set status, assign route and dispatch with no ambulance
+5. Continue via monitoring/simulation loop
+
+GREEN never returns directly to calculate. Both paths pass through `AssignRouteAndDispatch`.
+
+## Architectural Decisions
+
+### Vercel Serverless + Socket.io persistent connection
+
+Socket.io requires a persistent Node process. The official runtime is custom `server.ts`:
+
+- Express handles `/api/*`
+- Socket.io attaches to the same HTTP server
+- Next.js renders the dashboard
+
+For production with true persistent TCP connections, deploy `server.ts` on a Node host that keeps the process alive. Vercel cron can still call `/api/monitoring/run`.
+
+### react-med-geo-streamer@2.1.0
+
+The package is not published on npm.
+
+Local package `packages/react-med-geo-streamer@2.1.0` wraps `socket.io-client` and exposes stream hooks through `useSyncExternalStore`.
+
+Rules enforced by implementation:
+
+- live socket connection, events, alerts, ambulance live updates, facility live status updates use `react-med-geo-streamer` only
+- UI-only state (filters, date picker, modal/select state) uses React local state
+- Ably and Zustand are not used
+
+### Express as official backend
+
+Next API Routes are not the backend. All APIs are registered in Express (`interface/http/routes/registerRoutes.ts`).
+
+## API
+
+- `GET /api/facilities?type=&governorate=&status=`
+- `GET /api/ambulances?status=`
+- `GET /api/history?timestamp=&facilityId=`
+  - with `facilityId`: closest occupancy snapshot
+  - without `facilityId`: `{ occupancySnapshots, ambulanceSnapshots }`
+- `GET|POST /api/monitoring/run`
+- `POST /api/simulation/tick`
+- `POST /api/simulation/start`
+- `POST /api/simulation/stop`
+- `POST /api/dispatch/manual`
+
+## Realtime Events
+
+- `occupancy-critical`
+- `status-changed`
+- `ambulance-dispatched`
+- `ambulance-location`
+- `simulation-tick`
+
+## Quality Guarantees
+
+- centralized Express error middleware
+- request validation for query/body inputs
+- response DTOs for stable contracts
+- design tokens for UI consistency
+- unit tests for occupancy logic, RED/GREEN flowchart paths, and validation
