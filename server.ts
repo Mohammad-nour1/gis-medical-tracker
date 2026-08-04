@@ -10,34 +10,46 @@ const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME ?? '0.0.0.0'
 const port = Number(process.env.PORT ?? 3000)
 
-const nextApp = next({ dev, hostname, port })
-const handle = nextApp.getRequestHandler()
-
-nextApp.prepare().then(() => {
+async function bootstrap(): Promise<void> {
   const app = express()
   app.set('trust proxy', 1)
   app.use(express.json({ limit: '1mb' }))
 
-  const httpServer = createServer(app)
-  const io = createSocketGateway(httpServer)
-  const container = createApplicationContainer(io)
+  let applicationReady = false
 
   app.get('/api/health', (_request, response) => {
-    response.json({
+    response.status(200).json({
       status: 'ok',
+      ready: applicationReady,
       environment: process.env.NODE_ENV ?? 'development',
       timestamp: new Date().toISOString()
     })
   })
 
+  const httpServer = createServer(app)
+  const io = createSocketGateway(httpServer)
+
+  await new Promise<void>((resolve, reject) => {
+    httpServer.listen(port, hostname, () => {
+      process.stdout.write(`Listening on ${hostname}:${port}\n`)
+      resolve()
+    })
+    httpServer.on('error', reject)
+  })
+
+  const nextApp = next({ dev, hostname, port })
+  const handle = nextApp.getRequestHandler()
+  await nextApp.prepare()
+
+  const container = createApplicationContainer(io)
   registerRoutes(app, container)
   app.use(errorHandler)
   app.all(/.*/, (request, response) => handle(request, response))
+  applicationReady = true
+  process.stdout.write(`Application ready on ${hostname}:${port}\n`)
+}
 
-  httpServer.listen(port, hostname, () => {
-    process.stdout.write(`Server ready on ${hostname}:${port}\n`)
-  })
-}).catch(error => {
+bootstrap().catch(error => {
   process.stderr.write(`${error}\n`)
   process.exit(1)
 })
