@@ -9,6 +9,9 @@
     "lint": "eslint",
     "test": "tsx --test core/use-cases/__tests__/**/*.test.ts interface/http/validation/__tests__/**/*.test.ts"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "express": "^4.21.2",
     "leaflet": "^1.9.4",
@@ -19,7 +22,8 @@
     "react-dom": "19.2.8",
     "react-med-geo-streamer": "file:packages/react-med-geo-streamer",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "tsx": "^4.19.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -32,7 +36,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
-    "tsx": "^4.19.3",
     "typescript": "^5"
   }
 }

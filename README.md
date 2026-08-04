@@ -8,9 +8,8 @@
 1 استنسخ المشروع
 2 نفّذ الأمر `npm install`
 3 انسخ الملف `.env.example` إلى `.env.local` ثم عبّئ قيمة `DATABASE_URL`
-4 نفّذ ملفات SQL التالية على قاعدة PostgreSQL مع تفعيل PostGIS وفق الترتيب الآتي
-   - `infrastructure/database/migrations/001_init.sql`
-   - `infrastructure/database/migrations/002_ambulance_location_snapshots.sql`
+4 نفّذ ملف الإعداد الكامل على قاعدة PostgreSQL مع تفعيل PostGIS
+   - `infrastructure/database/migrations/000_full_setup.sql`
 5 شغّل المشروع بالأمر `npm run dev`
 6 افتح الرابط `http://localhost:3000`
 7 لتشغيل الاختبارات نفّذ الأمر `npm test`
@@ -36,6 +35,7 @@
 4 أنشأت بثاً حيّاً عبر Socket.io
 5 بنيت لوحة تتضمن خريطة وتجميع نقاط ومرشّحات وتنبيهات وأداة Time Machine وتوجيهاً يدوياً
 6 أنشأت واجهة Simulation تستقبل البيانات وتولّد سيناريوهات طوارئ وتحدّث قاعدة البيانات ثم تبث النتائج للمتصفح
+7 أضفت معالجة أخطاء مركزية وتحققاً من المدخلات وتصميماً متجاوباً وتوحيداً للألوان مع قابلية توسعة عبر المنافذ
 
 ## 4 سبب اختيار التقنيات
 
@@ -57,6 +57,7 @@
 1 التناقض بين الاستضافة من نوع Serverless على Vercel ومتطلب الاتصال المستمر عبر Socket.io
    - اعتمدت سيرفر Node موحّداً في الملف `server.ts` يجمع Express وSocket.io وNext معاً
    - استخدمت نمط Adapter عبر المنفذ `RealtimeBroadcaster` لجعل مزوّد البث قابلاً للتبديل دون الإخلال بطبقة المنطق
+   - النشر التشغيلي للعرض الحي على Railway لأنه يدعم عملية Node مستمرة
 2 غياب المكتبة `react-med-geo-streamer` عن سجل npm
    - أنشأت حزمة محلية بالاسم والإصدار المطلوبين `2.1.0` داخل `packages/react-med-geo-streamer`
    - غلّفت فيها `socket.io-client` وجعلت الواجهة تستمد بيانات البث الحي منها وحدها
@@ -76,24 +77,37 @@
    - تسهّل الاختبار والتوسعة لاحقاً
 2 حل تعارض Serverless مع الاتصال المستمر
    - يحتاج Socket.io إلى عملية Node مستمرة ولذلك يكون التشغيل الرسمي عبر `server.ts`
-   - في النشر الفعلي يُستحسن مضيف يدعم الاتصال المستمر
-   - يمكن الإفادة من Vercel للواجهة والمهام الدورية في حين يحتاج البث الحي إلى بيئة تشغيل مستمرة
+   - Vercel مناسب كمفهوم Serverless للواجهة أو المهام الدورية لكنه لا يكفي وحده للاتصال المستمر
+   - اعتمدت Railway لنشر Live Demo لأنه يشغّل السيرفر بشكل دائم ويبقي Socket.io شغّالاً
 3 سبب إنشاء حزمة بديلة للمكتبة غير الموجودة
    - فرض التاسك اسماً وإصداراً محدّدين والمكتبة غير منشورة
    - الحزمة المحلية تحقّق الالتزام بالاسم والإصدار وتُبقي مسار البث قابلاً للاستبدال لاحقاً
 
-## 7 الواجهات البرمجية الرئيسة
+## 7 النشر على Railway
 
-1 `GET /api/facilities`
-2 `GET /api/ambulances`
-3 `GET /api/history`
-4 `POST /api/monitoring/run`
-5 `POST /api/simulation/tick`
-6 `POST /api/simulation/start`
-7 `POST /api/simulation/stop`
-8 `POST /api/dispatch/manual`
+1 اربط مستودع GitHub بالمشروع على Railway
+2 أضف المتغيرات الآتية
+   - `DATABASE_URL` من Supabase
+   - `HOSTNAME=0.0.0.0`
+   - `NEXT_PUBLIC_SOCKET_URL` بنفس رابط النطاق العام للخدمة بعد توليده
+3 اجعل أمر البناء `npm run build`
+4 اجعل أمر التشغيل `npm run start`
+5 بعد نجاح النشر افتح `/api/health` للتأكد ثم افتح الصفحة الرئيسة
+6 نفّذ Simulation Tick مرة واحدة على الأقل قبل تجربة Time Machine
 
-## 8 أحداث البث الحي
+## 8 الواجهات البرمجية الرئيسة
+
+1 `GET /api/health`
+2 `GET /api/facilities`
+3 `GET /api/ambulances`
+4 `GET /api/history`
+5 `POST /api/monitoring/run`
+6 `POST /api/simulation/tick`
+7 `POST /api/simulation/start`
+8 `POST /api/simulation/stop`
+9 `POST /api/dispatch/manual`
+
+## 9 أحداث البث الحي
 
 1 `occupancy-critical`
 2 `status-changed`
@@ -101,9 +115,9 @@
 4 `ambulance-location`
 5 `simulation-tick`
 
-## 9 ملاحظات التسليم
+## 10 ملاحظات التسليم
 
 1 المستودع
    - https://github.com/Mohammad-nour1/gis-medical-tracker
 2 رابط العرض التجريبي Live Demo
-   - يُضاف بعد النشر على مضيف Node يدعم الاتصال المستمر
+   - يُضاف هنا مباشرة بعد اكتمال نشر Railway
