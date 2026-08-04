@@ -1,26 +1,26 @@
 export const designTokens = {
   color: {
-    surface: '#ffffff',
-    surfaceMuted: '#f1f5f9',
-    border: '#e2e8f0',
-    text: '#0f172a',
-    textMuted: '#64748b',
-    statusGreen: '#16a34a',
-    statusRed: '#dc2626',
-    ambulanceAvailable: '#2563eb',
-    ambulanceDispatched: '#ea580c',
-    dangerSurface: '#fef2f2',
-    dangerBorder: '#fecaca',
-    dangerText: '#b91c1c',
-    successSurface: '#ecfdf5',
-    successBorder: '#a7f3d0',
-    successText: '#047857',
-    accent: '#0f172a',
-    success: '#047857'
+    surface: 'rgba(255, 255, 255, 0.72)',
+    surfaceMuted: '#07131f',
+    border: 'rgba(148, 210, 230, 0.22)',
+    text: '#e8f4f8',
+    textMuted: '#8fb4c4',
+    statusGreen: '#2dd4a0',
+    statusRed: '#ff5c7a',
+    ambulanceAvailable: '#38bdf8',
+    ambulanceDispatched: '#fbbf24',
+    dangerSurface: 'rgba(255, 92, 122, 0.14)',
+    dangerBorder: 'rgba(255, 92, 122, 0.35)',
+    dangerText: '#ffb0bf',
+    successSurface: 'rgba(45, 212, 160, 0.14)',
+    successBorder: 'rgba(45, 212, 160, 0.35)',
+    successText: '#9af0d0',
+    accent: '#14b8a6',
+    success: '#14b8a6'
   },
   radius: {
-    panel: '0.75rem',
-    control: '0.5rem'
+    panel: '1.25rem',
+    control: '0.85rem'
   },
   map: {
     centerLatitude: 34.8021,
@@ -28,7 +28,7 @@ export const designTokens = {
     zoom: 6,
     minZoom: 5,
     maxZoom: 12,
-    facilityMarkerSize: 14,
-    ambulanceMarkerSize: 12
+    facilityMarkerSize: 16,
+    ambulanceMarkerSize: 13
   }
 } as const

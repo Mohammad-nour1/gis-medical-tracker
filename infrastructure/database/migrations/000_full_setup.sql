@@ -57,7 +57,22 @@ VALUES
   ('11111111-1111-1111-1111-111111111102', 'Aleppo Field Clinic', 'field_unit', 'Aleppo', 40, 30, 'GREEN', ST_SetSRID(ST_MakePoint(37.1343, 36.2021), 4326)::geography),
   ('11111111-1111-1111-1111-111111111103', 'Homs General Hospital', 'hospital', 'Homs', 90, 75, 'GREEN', ST_SetSRID(ST_MakePoint(36.7136, 34.7324), 4326)::geography),
   ('11111111-1111-1111-1111-111111111104', 'Latakia Coastal Clinic', 'clinic', 'Latakia', 35, 20, 'GREEN', ST_SetSRID(ST_MakePoint(35.7956, 35.5311), 4326)::geography),
-  ('11111111-1111-1111-1111-111111111105', 'Daraa Emergency Unit', 'field_unit', 'Daraa', 25, 18, 'GREEN', ST_SetSRID(ST_MakePoint(36.1021, 32.6189), 4326)::geography)
+  ('11111111-1111-1111-1111-111111111105', 'Daraa Emergency Unit', 'field_unit', 'Daraa', 25, 18, 'GREEN', ST_SetSRID(ST_MakePoint(36.1021, 32.6189), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111106', 'Damascus Ibn Al-Nafis Hospital', 'hospital', 'Damascus', 150, 138, 'RED', ST_SetSRID(ST_MakePoint(36.2950, 33.5220), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111107', 'Aleppo University Hospital', 'hospital', 'Aleppo', 200, 185, 'RED', ST_SetSRID(ST_MakePoint(37.1610, 36.2150), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111108', 'Hama National Hospital', 'hospital', 'Hama', 110, 72, 'GREEN', ST_SetSRID(ST_MakePoint(36.7570, 35.1330), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111109', 'Tartus Marine Clinic', 'clinic', 'Tartus', 40, 22, 'GREEN', ST_SetSRID(ST_MakePoint(35.8865, 34.8890), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111110', 'Idlib Field Medical Unit', 'field_unit', 'Idlib', 45, 41, 'RED', ST_SetSRID(ST_MakePoint(36.6330, 35.9300), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111111', 'Deir ez-Zor Central Hospital', 'hospital', 'Deir ez-Zor', 95, 60, 'GREEN', ST_SetSRID(ST_MakePoint(40.1400, 35.3360), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111112', 'Raqqa Emergency Clinic', 'clinic', 'Raqqa', 50, 46, 'RED', ST_SetSRID(ST_MakePoint(39.0080, 35.9520), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111113', 'Hasakah General Hospital', 'hospital', 'Hasakah', 80, 48, 'GREEN', ST_SetSRID(ST_MakePoint(40.7430, 36.5070), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111114', 'Qamishli Field Unit', 'field_unit', 'Hasakah', 30, 16, 'GREEN', ST_SetSRID(ST_MakePoint(41.2280, 37.0500), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111115', 'Sweida Community Clinic', 'clinic', 'Sweida', 35, 19, 'GREEN', ST_SetSRID(ST_MakePoint(36.5690, 32.7090), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111116', 'Palmyra Desert Field Unit', 'field_unit', 'Homs', 28, 25, 'RED', ST_SetSRID(ST_MakePoint(38.2840, 34.5600), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111117', 'Quneitra Border Clinic', 'clinic', 'Quneitra', 22, 10, 'GREEN', ST_SetSRID(ST_MakePoint(35.8240, 33.1260), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111118', 'Rural Damascus Field Hospital', 'field_unit', 'Rural Damascus', 55, 33, 'GREEN', ST_SetSRID(ST_MakePoint(36.4010, 33.4870), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111119', 'Banias Coastal Clinic', 'clinic', 'Tartus', 26, 14, 'GREEN', ST_SetSRID(ST_MakePoint(35.9580, 35.1820), 4326)::geography),
+  ('11111111-1111-1111-1111-111111111120', 'Jableh Medical Center', 'clinic', 'Latakia', 32, 29, 'RED', ST_SetSRID(ST_MakePoint(35.9220, 35.3620), 4326)::geography)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO ambulances (id, code, status, location)
@@ -65,5 +80,17 @@ VALUES
   ('22222222-2222-2222-2222-222222222201', 'AMB-DMS-01', 'available', ST_SetSRID(ST_MakePoint(36.2900, 33.5100), 4326)::geography),
   ('22222222-2222-2222-2222-222222222202', 'AMB-ALP-02', 'available', ST_SetSRID(ST_MakePoint(37.1500, 36.2000), 4326)::geography),
   ('22222222-2222-2222-2222-222222222203', 'AMB-HMS-03', 'available', ST_SetSRID(ST_MakePoint(36.7200, 34.7400), 4326)::geography),
-  ('22222222-2222-2222-2222-222222222204', 'AMB-LTK-04', 'available', ST_SetSRID(ST_MakePoint(35.7800, 35.5400), 4326)::geography)
+  ('22222222-2222-2222-2222-222222222204', 'AMB-LTK-04', 'available', ST_SetSRID(ST_MakePoint(35.7800, 35.5400), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222205', 'AMB-DMS-05', 'available', ST_SetSRID(ST_MakePoint(36.2650, 33.5050), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222206', 'AMB-ALP-06', 'available', ST_SetSRID(ST_MakePoint(37.1200, 36.1900), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222207', 'AMB-HMA-07', 'available', ST_SetSRID(ST_MakePoint(36.7400, 35.1400), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222208', 'AMB-TRS-08', 'available', ST_SetSRID(ST_MakePoint(35.8700, 34.8800), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222209', 'AMB-IDL-09', 'available', ST_SetSRID(ST_MakePoint(36.6500, 35.9200), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222210', 'AMB-DEZ-10', 'available', ST_SetSRID(ST_MakePoint(40.1500, 35.3300), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222211', 'AMB-RQA-11', 'available', ST_SetSRID(ST_MakePoint(39.0200, 35.9400), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222212', 'AMB-HSK-12', 'available', ST_SetSRID(ST_MakePoint(40.7500, 36.5000), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222213', 'AMB-SWD-13', 'available', ST_SetSRID(ST_MakePoint(36.5600, 32.7000), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222214', 'AMB-PLM-14', 'available', ST_SetSRID(ST_MakePoint(38.2700, 34.5500), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222215', 'AMB-QNT-15', 'available', ST_SetSRID(ST_MakePoint(35.8300, 33.1200), 4326)::geography),
+  ('22222222-2222-2222-2222-222222222216', 'AMB-RDS-16', 'available', ST_SetSRID(ST_MakePoint(36.3900, 33.4800), 4326)::geography)
 ON CONFLICT (id) DO NOTHING;

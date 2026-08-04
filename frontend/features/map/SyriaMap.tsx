@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import 'leaflet.markercluster'
 import { useGeoMedStreamEvents } from 'react-med-geo-streamer'
 import { AmbulanceRecord, FacilityRecord } from '../../types/records'
@@ -19,9 +18,13 @@ type SyriaMapProps = {
 function facilityIcon(status: FacilityRecord['status']) {
   const color = status === 'RED' ? designTokens.color.statusRed : designTokens.color.statusGreen
   const size = designTokens.map.facilityMarkerSize
+  const glow = status === 'RED' ? 'rgba(255,92,122,0.55)' : 'rgba(45,212,160,0.55)'
   return L.divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;border:2px solid white;background:${color}"></div>`,
+    className: 'geo-marker',
+    html: `<div style="position:relative;width:${size}px;height:${size}px;">
+      <span style="position:absolute;inset:-6px;border-radius:9999px;background:${glow};filter:blur(6px);opacity:.85;"></span>
+      <span style="position:absolute;inset:0;border-radius:9999px;border:2px solid rgba(255,255,255,.92);background:${color};box-shadow:0 0 12px ${glow};"></span>
+    </div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2]
   })
@@ -32,9 +35,13 @@ function ambulanceIcon(status: AmbulanceRecord['status']) {
     ? designTokens.color.ambulanceDispatched
     : designTokens.color.ambulanceAvailable
   const size = designTokens.map.ambulanceMarkerSize
+  const glow = status === 'dispatched' ? 'rgba(251,191,36,0.55)' : 'rgba(56,189,248,0.55)'
   return L.divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;border-radius:2px;border:2px solid white;background:${color}"></div>`,
+    className: 'geo-marker',
+    html: `<div style="position:relative;width:${size}px;height:${size}px;">
+      <span style="position:absolute;inset:-5px;border-radius:6px;background:${glow};filter:blur(5px);opacity:.8;"></span>
+      <span style="position:absolute;inset:0;border-radius:5px;border:2px solid rgba(255,255,255,.92);background:${color};transform:rotate(45deg);box-shadow:0 0 10px ${glow};"></span>
+    </div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2]
   })
@@ -96,14 +103,43 @@ export function SyriaMap({ facilities, ambulances, historicalMode }: SyriaMapPro
       center: [designTokens.map.centerLatitude, designTokens.map.centerLongitude],
       zoom: designTokens.map.zoom,
       minZoom: designTokens.map.minZoom,
-      maxZoom: designTokens.map.maxZoom
+      maxZoom: designTokens.map.maxZoom,
+      attributionControl: false
     })
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+    L.control.attribution({
+      position: 'bottomright',
+      prefix: false
     }).addTo(map)
 
-    facilityClusterRef.current = L.markerClusterGroup()
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OSM'
+    }).addTo(map)
+
+    facilityClusterRef.current = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      maxClusterRadius: 55,
+      spiderfyOnMaxZoom: true,
+      iconCreateFunction(cluster) {
+        const childMarkers = cluster.getAllChildMarkers()
+        let redCount = 0
+        for (const marker of childMarkers) {
+          if ((marker.options as { facilityStatus?: string }).facilityStatus === 'RED') {
+            redCount += 1
+          }
+        }
+        const count = childMarkers.length
+        const mostlyRed = redCount >= count / 2
+        const color = mostlyRed ? designTokens.color.statusRed : designTokens.color.statusGreen
+        const size = count >= 10 ? 46 : 38
+        return L.divIcon({
+          html: `<div class="facility-cluster" style="--cluster-color:${color};width:${size}px;height:${size}px;">${count}</div>`,
+          className: 'facility-cluster-wrap',
+          iconSize: L.point(size, size),
+          iconAnchor: L.point(size / 2, size / 2)
+        })
+      }
+    })
     ambulanceLayerRef.current = L.layerGroup()
 
     map.addLayer(facilityClusterRef.current)
@@ -133,8 +169,9 @@ export function SyriaMap({ facilities, ambulances, historicalMode }: SyriaMapPro
     cluster.clearLayers()
     for (const facility of liveFacilities) {
       const marker = L.marker([facility.location.latitude, facility.location.longitude], {
-        icon: facilityIcon(facility.status)
-      })
+        icon: facilityIcon(facility.status),
+        facilityStatus: facility.status
+      } as L.MarkerOptions & { facilityStatus: FacilityRecord['status'] })
       marker.bindPopup(`
         <strong>${facility.name}</strong><br/>
         ${facility.type} · ${facility.governorate}<br/>
@@ -173,5 +210,5 @@ export function SyriaMap({ facilities, ambulances, historicalMode }: SyriaMapPro
     }
   }, [liveAmbulances])
 
-  return <div ref={mapContainerRef} className="map-shell rounded-[var(--radius-panel)] border border-[var(--color-border)]" />
+  return <div ref={mapContainerRef} className="map-shell" />
 }

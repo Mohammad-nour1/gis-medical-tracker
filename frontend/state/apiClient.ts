@@ -43,6 +43,7 @@ export async function fetchFacilities(filter: FacilityFilterState): Promise<Faci
 
 export async function fetchAmbulances(ambulanceStatus: FacilityFilterState['ambulanceStatus']): Promise<AmbulanceRecord[]> {
   try {
+    if (ambulanceStatus === 'hidden') return []
     const params = new URLSearchParams()
     if (ambulanceStatus !== 'all') params.set('status', ambulanceStatus)
     const query = params.toString()

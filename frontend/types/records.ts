@@ -51,5 +51,5 @@ export type FacilityFilterState = {
   type: FacilityType | 'all'
   governorate: string | 'all'
   status: FacilityStatus | 'all'
-  ambulanceStatus: AmbulanceStatus | 'all'
+  ambulanceStatus: AmbulanceStatus | 'all' | 'hidden'
 }
