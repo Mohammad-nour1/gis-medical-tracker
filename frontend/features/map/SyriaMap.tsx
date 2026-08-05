@@ -13,8 +13,6 @@ type SyriaMapProps = {
   facilities: FacilityRecord[]
   ambulances: AmbulanceRecord[]
   historicalMode: boolean
-  focusFacilityId?: string | null
-  focusToken?: string | null
 }
 
 function facilityIcon(status: FacilityRecord['status'], emphasized: boolean) {
@@ -37,11 +35,11 @@ function facilityIcon(status: FacilityRecord['status'], emphasized: boolean) {
 }
 
 function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, enRoute?: boolean) {
-  const color = status === 'dispatched' || enRoute
+  const color = status === 'dispatched'
     ? designTokens.color.ambulanceDispatched
     : designTokens.color.ambulanceAvailable
   const size = designTokens.map.ambulanceMarkerSize + (enRoute ? 2 : 0)
-  const glow = status === 'dispatched' || enRoute ? 'rgba(251,191,36,0.55)' : 'rgba(56,189,248,0.45)'
+  const glow = status === 'dispatched' ? 'rgba(251,191,36,0.55)' : 'rgba(56,189,248,0.45)'
   const arrowSpace = enRoute ? 9 : 0
   const box = size + 4
   const height = size + arrowSpace + 4
@@ -64,16 +62,13 @@ function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, e
 export function SyriaMap({
   facilities,
   ambulances,
-  historicalMode,
-  focusFacilityId = null,
-  focusToken = null
+  historicalMode
 }: SyriaMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const facilityClusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const ambulanceLayerRef = useRef<L.LayerGroup | null>(null)
   const ambulanceMarkersRef = useRef<Map<string, L.Marker>>(new Map())
-  const lastFocusTokenRef = useRef<string | null>(null)
 
   const locationEvents = useGeoMedStreamEvents('ambulance-location')
   const dispatchEvents = useGeoMedStreamEvents('ambulance-dispatched')
@@ -217,11 +212,10 @@ export function SyriaMap({
     if (!cluster) return
     cluster.clearLayers()
     for (const facility of liveFacilities) {
-      const emphasized = focusFacilityId === facility.id
       const marker = L.marker([facility.location.latitude, facility.location.longitude], {
-        icon: facilityIcon(facility.status, emphasized),
+        icon: facilityIcon(facility.status, false),
         facilityStatus: facility.status,
-        zIndexOffset: emphasized ? 600 : 0
+        zIndexOffset: 0
       } as L.MarkerOptions & { facilityStatus: FacilityRecord['status'] })
       marker.bindPopup(`
         <strong>${facility.name}</strong><br/>
@@ -231,7 +225,7 @@ export function SyriaMap({
       `)
       cluster.addLayer(marker)
     }
-  }, [liveFacilities, focusFacilityId])
+  }, [liveFacilities])
 
   useEffect(() => {
     const layer = ambulanceLayerRef.current
@@ -263,20 +257,6 @@ export function SyriaMap({
       layer.addLayer(marker)
     }
   }, [liveAmbulances])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !focusFacilityId || historicalMode) return
-    const token = focusToken ?? focusFacilityId
-    if (lastFocusTokenRef.current === token) return
-    const target = liveFacilities.find(facility => facility.id === focusFacilityId)
-    if (!target) return
-    lastFocusTokenRef.current = token
-    map.flyTo([target.location.latitude, target.location.longitude], Math.max(map.getZoom(), 8), {
-      animate: true,
-      duration: 0.28
-    })
-  }, [focusFacilityId, focusToken, liveFacilities, historicalMode])
 
   return <div ref={mapContainerRef} className="map-shell" />
 }

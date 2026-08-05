@@ -330,8 +330,6 @@ function DashboardBody() {
                 facilities={facilities}
                 ambulances={ambulances}
                 historicalMode={isHistoricalView}
-                focusFacilityId={simulationRunning ? latestTick?.payload.emergencyFacilityId ?? null : null}
-                focusToken={simulationRunning ? latestTickId ?? null : null}
               />
             </div>
           </section>

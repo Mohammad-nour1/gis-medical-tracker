@@ -28,9 +28,9 @@ export function MapLegend() {
           </span>
         </li>
         <li>
-          <span className="legend-swatch legend-ambulance-dispatched" aria-hidden="true" />
+          <span className="legend-swatch legend-enroute-arrow" aria-hidden="true">▲</span>
           <span>
-            <strong>En-route arrow</strong>
+            <strong>Arrow → emergency</strong>
           </span>
         </li>
         <li>

@@ -557,6 +557,22 @@ select.control {
   transform: rotate(45deg);
 }
 
+.legend-enroute-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.7rem !important;
+  height: 0.7rem !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+  color: #fff;
+  font-size: 0.62rem;
+  line-height: 1;
+  transform: none;
+  text-shadow: 0 0 4px #03141c;
+}
+
 .legend-cluster {
   display: inline-flex;
   align-items: center;
