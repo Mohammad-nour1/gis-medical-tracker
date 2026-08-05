@@ -10,6 +10,8 @@
 2. انسخ `.env.example` إلى `.env.local` واملأ `DATABASE_URL`
 3. نفّذ على PostgreSQL/PostGIS الملف:
    `infrastructure/database/migrations/000_full_setup.sql`
+   وإذا القاعدة موجودة مسبقاً وتحتاج توسيع دمشق فقط:
+   `infrastructure/database/migrations/005_expand_damascus_hospitals.sql`
 4. `npm run dev` ثم افتح `http://localhost:3000`
 5. الاختبارات: `npm test`
 
