@@ -182,7 +182,9 @@ export function SyriaMap({
     facilityClusterRef.current = L.markerClusterGroup({
       showCoverageOnHover: false,
       maxClusterRadius: designTokens.map.clusterRadius,
-      spiderfyOnMaxZoom: true,
+      spiderfyOnMaxZoom: false,
+      disableClusteringAtZoom: 10,
+      zoomToBoundsOnClick: true,
       iconCreateFunction(cluster) {
         const childMarkers = cluster.getAllChildMarkers()
         let redCount = 0
