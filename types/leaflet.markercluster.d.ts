@@ -1,9 +1,17 @@
-import 'leaflet.markercluster'
+import 'leaflet'
 
 declare module 'leaflet' {
   interface MarkerClusterGroupOptions {
     showCoverageOnHover?: boolean
     zoomToBoundsOnClick?: boolean
+    maxClusterRadius?: number
+    spiderfyOnMaxZoom?: boolean
+    iconCreateFunction?: (cluster: MarkerCluster) => DivIcon | Icon
+  }
+
+  class MarkerCluster extends Marker {
+    getAllChildMarkers(): Marker[]
+    getChildCount(): number
   }
 
   class MarkerClusterGroup extends FeatureGroup {
