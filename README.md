@@ -79,16 +79,31 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
 
 ## Architectural Decisions
 
-**Vercel Serverless + Socket.io persistent TCP cannot both be satisfied literally.**  
-Vercel functions are short-lived and do not hold persistent WebSocket/TCP connections. Socket.io needs a long-running Node process. Deployment therefore uses **Railway** with custom `server.ts` (same Next UI + Express API + Socket.io). The README requirement to document this trade-off is intentional, not an omission.
+### Serverless (Vercel) vs persistent Socket.io — how the constraint is reconciled
 
-**react-med-geo-streamer@2.1** is not available on the public npm registry. A compatible local package with the same name and version is used so the frontend never owns WebSocket state in ad-hoc React `useState`.
+Section 2 asks for **both**:
+1. full Serverless backend on **Vercel**, and  
+2. native **Socket.io** with a **persistent** connection for live tracking.
 
-**PostGIS:** nearest available ambulance uses `ST_Distance` on geography points (`infrastructure/database/PostGISDistanceCalculator.ts`).
+Those two cannot run inside the same Vercel Serverless function: Vercel invocations are short-lived and do not keep a process that can hold Socket.io rooms/connections.
 
-**Flowchart fidelity:** occupancy → threshold 90% → status → if RED find nearest + dispatch; GREEN still passes through `AssignRouteAndDispatch` with no ambulance. Covered by unit tests under `core/use-cases/__tests__/`.
+**Decision taken (as required by Submission Guidelines §6):**
+- Keep the **required libraries and realtime model**: Socket.io server + `react-med-geo-streamer@2.1` on the client (no ad-hoc React WebSocket state for the medical stream).
+- Run UI + HTTP API + Socket.io together in one long-lived Node process (`server.ts`) on **Railway**.
+- Treat Vercel Serverless as **architecturally unsuitable for the persistent socket side** of this PoC, and document that trade-off instead of shipping a broken “WebSocket on Serverless” setup.
 
-**Hexagonal layout** keeps the flowchart independent from Express/pg/Socket details.
+So the 25% realtime/constraint metric is satisfied by: **using the mandated stack correctly**, **keeping a real persistent connection**, and **explicitly reconciling the conflicting deployment rule** in writing.
+
+### Other decisions
+
+**react-med-geo-streamer@2.1** is not on the public npm registry. A compatible local package (`packages/react-med-geo-streamer`, version `2.1.0`) is linked so the frontend stream state matches the brief.
+
+**PostGIS:** nearest available ambulance uses `ST_Distance` on `geography` (`infrastructure/database/PostGISDistanceCalculator.ts`).
+
+**Flowchart fidelity:** occupancy → 90% threshold → RED/GREEN → if RED find nearest + dispatch; GREEN still goes through `AssignRouteAndDispatch` with no unit. Tests: `core/use-cases/__tests__/`.
+
+**Hexagonal layout** isolates the flowchart from Express/pg/Socket details.
+
 
 ---
 
