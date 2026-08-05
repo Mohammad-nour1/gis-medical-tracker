@@ -1,5 +1,6 @@
 import { FacilityRepository, FacilityFilter } from '../../core/ports/FacilityRepository'
 import { Facility, FacilityStatus, FacilityType } from '../../core/entities/Facility'
+import { governorateMatchValues, normalizeGovernorate } from '../../core/shared/governorates'
 import { getPostgresPool } from './PostgresConnection'
 
 export class PostgresFacilityRepository implements FacilityRepository {
@@ -36,8 +37,8 @@ export class PostgresFacilityRepository implements FacilityRepository {
       conditions.push(`type = $${values.length}`)
     }
     if (filter.governorate) {
-      values.push(filter.governorate)
-      conditions.push(`governorate = $${values.length}`)
+      values.push(governorateMatchValues(filter.governorate))
+      conditions.push(`governorate = ANY($${values.length})`)
     }
     if (filter.status) {
       values.push(filter.status)
@@ -71,7 +72,7 @@ export class PostgresFacilityRepository implements FacilityRepository {
       row.id as string,
       row.name as string,
       row.type as FacilityType,
-      row.governorate as string,
+      normalizeGovernorate(String(row.governorate)),
       Number(row.total_beds),
       Number(row.occupied_beds),
       { latitude: Number(row.latitude), longitude: Number(row.longitude) },

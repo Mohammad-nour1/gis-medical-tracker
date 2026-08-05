@@ -55,6 +55,7 @@ function DashboardBody() {
   const [filter, setFilter] = useState<FacilityFilterState>(defaultFilter)
   const [facilities, setFacilities] = useState<FacilityRecord[]>([])
   const [ambulances, setAmbulances] = useState<AmbulanceRecord[]>([])
+  const [governorates, setGovernorates] = useState<string[]>([])
   const [timeMachineValue, setTimeMachineValue] = useState('')
   const [isHistoricalView, setIsHistoricalView] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -65,11 +66,6 @@ function DashboardBody() {
   const connectionStatus = useGeoMedConnectionStatus()
   const simulationTicks = useGeoMedStreamEvents('simulation-tick')
   const latestTickId = simulationTicks[0]?.id
-
-  const governorates = useMemo(
-    () => Array.from(new Set(facilities.map(facility => facility.governorate))).sort(),
-    [facilities]
-  )
 
   const stats = useMemo(() => {
     const red = facilities.filter(facility => facility.status === 'RED').length
@@ -82,12 +78,24 @@ function DashboardBody() {
   const refreshData = useCallback(async () => {
     setErrorMessage(null)
     try {
-      const [nextFacilities, nextAmbulances] = await Promise.all([
+      const catalogFilter: FacilityFilterState = {
+        type: 'all',
+        governorate: 'all',
+        status: 'all',
+        ambulanceStatus: 'all'
+      }
+      const [nextFacilities, nextAmbulances, catalogFacilities] = await Promise.all([
         fetchFacilities(filter),
-        fetchAmbulances(filter.ambulanceStatus)
+        fetchAmbulances(filter.ambulanceStatus),
+        fetchFacilities(catalogFilter)
       ])
       setFacilities(nextFacilities)
       setAmbulances(nextAmbulances)
+      setGovernorates(
+        Array.from(new Set(catalogFacilities.map(facility => facility.governorate))).sort((a, b) =>
+          a.localeCompare(b)
+        )
+      )
     } catch (error) {
       setErrorMessage(resolveUserMessage(error, 'Failed to load dashboard data'))
     }

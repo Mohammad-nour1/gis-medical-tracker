@@ -1,0 +1,14 @@
+UPDATE facilities SET governorate = 'Damascus' WHERE governorate IN ('دمشق');
+UPDATE facilities SET governorate = 'Aleppo' WHERE governorate IN ('حلب');
+UPDATE facilities SET governorate = 'Homs' WHERE governorate IN ('حمص');
+UPDATE facilities SET governorate = 'Hama' WHERE governorate IN ('حماة');
+UPDATE facilities SET governorate = 'Latakia' WHERE governorate IN ('اللاذقية');
+UPDATE facilities SET governorate = 'Tartus' WHERE governorate IN ('طرطوس');
+UPDATE facilities SET governorate = 'Idlib' WHERE governorate IN ('إدلب', 'ادلب');
+UPDATE facilities SET governorate = 'Daraa' WHERE governorate IN ('درعا');
+UPDATE facilities SET governorate = 'Sweida' WHERE governorate IN ('السويداء', 'سويداء');
+UPDATE facilities SET governorate = 'Quneitra' WHERE governorate IN ('القنيطرة', 'قنيطرة');
+UPDATE facilities SET governorate = 'Raqqa' WHERE governorate IN ('الرقة');
+UPDATE facilities SET governorate = 'Deir ez-Zor' WHERE governorate IN ('دير الزور', 'ديرالزور');
+UPDATE facilities SET governorate = 'Hasakah' WHERE governorate IN ('الحسكة', 'حسكة');
+UPDATE facilities SET governorate = 'Rural Damascus' WHERE governorate IN ('ريف دمشق');
