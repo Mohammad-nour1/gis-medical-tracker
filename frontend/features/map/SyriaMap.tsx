@@ -39,20 +39,21 @@ function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, e
   const color = status === 'dispatched' || enRoute
     ? designTokens.color.ambulanceDispatched
     : designTokens.color.ambulanceAvailable
-  const size = designTokens.map.ambulanceMarkerSize + (enRoute ? 4 : 0)
-  const glow = status === 'dispatched' || enRoute ? 'rgba(251,191,36,0.55)' : 'rgba(56,189,248,0.55)'
-  const rotation = headingDeg ?? 45
-  const arrow = headingDeg == null
+  const size = designTokens.map.ambulanceMarkerSize + (enRoute ? 6 : 2)
+  const glow = status === 'dispatched' || enRoute ? 'rgba(251,191,36,0.65)' : 'rgba(56,189,248,0.55)'
+  const showArrow = enRoute || headingDeg != null
+  const facing = headingDeg ?? 0
+  const arrow = !showArrow
     ? ''
-    : `<span style="position:absolute;left:50%;top:-11px;transform:translateX(-50%) rotate(${headingDeg}deg);transform-origin:50% 160%;font-size:11px;line-height:1;color:${color};text-shadow:0 0 6px ${glow};">▲</span>`
+    : `<span class="ambulance-arrow" style="transform:translateX(-50%) rotate(${facing}deg);">▲</span>`
   return L.divIcon({
     className: 'geo-marker',
-    html: `<div style="position:relative;width:${size + 8}px;height:${size + 14}px;">
+    html: `<div style="position:relative;width:${size + 16}px;height:${size + 22}px;">
       ${arrow}
-      <span style="position:absolute;left:50%;top:50%;width:${size}px;height:${size}px;margin-left:-${size / 2}px;margin-top:-${size / 2}px;border-radius:5px;border:2px solid rgba(255,255,255,.92);background:${color};transform:rotate(${enRoute ? rotation : 45}deg);box-shadow:0 0 10px ${glow};"></span>
+      <span style="position:absolute;left:50%;top:58%;width:${size}px;height:${size}px;margin-left:-${size / 2}px;margin-top:-${size / 2}px;border-radius:5px;border:2px solid #fff;background:${color};transform:rotate(45deg);box-shadow:0 0 12px ${glow};"></span>
     </div>`,
-    iconSize: [size + 8, size + 14],
-    iconAnchor: [(size + 8) / 2, (size + 14) / 2]
+    iconSize: [size + 16, size + 22],
+    iconAnchor: [(size + 16) / 2, (size + 22) / 2]
   })
 }
 
@@ -83,16 +84,22 @@ export function SyriaMap({ facilities, ambulances, historicalMode, focusFacility
       }
     }
 
-    for (const event of [...locationEvents].reverse()) {
-      const current = next.get(event.payload.ambulanceId)
-      if (current) {
-        next.set(event.payload.ambulanceId, {
-          ...current,
-          location: event.payload.location,
-          headingDeg: event.payload.headingDeg,
-          targetFacilityId: event.payload.targetFacilityId ?? null
-        })
+    const latestLocationByAmbulance = new Map<string, (typeof locationEvents)[number]>()
+    for (const event of locationEvents) {
+      if (!latestLocationByAmbulance.has(event.payload.ambulanceId)) {
+        latestLocationByAmbulance.set(event.payload.ambulanceId, event)
       }
+    }
+
+    for (const [ambulanceId, event] of latestLocationByAmbulance) {
+      const current = next.get(ambulanceId)
+      if (!current) continue
+      next.set(ambulanceId, {
+        ...current,
+        location: event.payload.location,
+        headingDeg: event.payload.headingDeg,
+        targetFacilityId: event.payload.targetFacilityId ?? null
+      })
     }
 
     return Array.from(next.values())
@@ -234,9 +241,9 @@ export function SyriaMap({ facilities, ambulances, historicalMode, focusFacility
     const target = liveFacilities.find(facility => facility.id === focusFacilityId)
     if (!target) return
     lastFocusRef.current = focusFacilityId
-    map.flyTo([target.location.latitude, target.location.longitude], Math.max(map.getZoom(), 8), {
+    map.flyTo([target.location.latitude, target.location.longitude], Math.max(map.getZoom(), 9), {
       animate: true,
-      duration: 0.85
+      duration: 0.55
     })
   }, [focusFacilityId, liveFacilities, historicalMode])
 

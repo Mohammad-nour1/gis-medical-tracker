@@ -93,7 +93,27 @@ function DashboardBody() {
         fetchFacilities(catalogFilter)
       ])
       setFacilities(nextFacilities)
-      setAmbulances(nextAmbulances)
+      setAmbulances(current => {
+        const motionById = new Map(
+          current.map(ambulance => [
+            ambulance.id,
+            {
+              headingDeg: ambulance.headingDeg,
+              targetFacilityId: ambulance.targetFacilityId
+            }
+          ])
+        )
+        return nextAmbulances.map(ambulance => {
+          const motion = motionById.get(ambulance.id)
+          return motion
+            ? {
+              ...ambulance,
+              headingDeg: motion.headingDeg,
+              targetFacilityId: motion.targetFacilityId
+            }
+            : ambulance
+        })
+      })
       setGovernorates(uniqueGovernorateOptions(catalogFacilities.map(facility => facility.governorate)))
     } catch (error) {
       setErrorMessage(resolveUserMessage(error, 'Failed to load dashboard data'))
@@ -210,7 +230,7 @@ function DashboardBody() {
         setSuccessMessage('Simulation stopped')
         return
       }
-      await startSimulation(2500)
+      await startSimulation(1200)
       setSimulationRunning(true)
       setSuccessMessage('Simulation started')
     } catch (error) {

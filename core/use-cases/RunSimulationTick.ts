@@ -71,7 +71,7 @@ export class RunSimulationTick {
           ambulance.id,
           ambulance.location,
           targetFacility.location,
-          0.055
+          0.18
         )
         : ScenarioGenerator.createIncrementalMovement(ambulance.id, ambulance.location)
 
