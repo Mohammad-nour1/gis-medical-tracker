@@ -6,6 +6,7 @@ declare module 'leaflet' {
     zoomToBoundsOnClick?: boolean
     maxClusterRadius?: number
     spiderfyOnMaxZoom?: boolean
+    disableClusteringAtZoom?: number
     iconCreateFunction?: (cluster: MarkerCluster) => DivIcon | Icon
   }
 
