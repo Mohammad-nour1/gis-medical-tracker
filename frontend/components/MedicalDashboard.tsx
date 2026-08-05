@@ -106,7 +106,10 @@ function DashboardBody() {
   useEffect(() => {
     if (!latestTickId || isHistoricalView) return
     refreshData()
-  }, [latestTickId, isHistoricalView, refreshData])
+    if (simulationRunning) {
+      setSuccessMessage(`Simulation tick update · ${new Date().toLocaleTimeString()}`)
+    }
+  }, [latestTickId, isHistoricalView, refreshData, simulationRunning])
 
   async function applyHistoricalView() {
     if (!timeMachineValue) {
@@ -231,7 +234,13 @@ function DashboardBody() {
               <h1 className="dashboard-title">GIS Medical Dashboard</h1>
               <p className="dashboard-subtitle">Syria health sector real-time monitoring</p>
               <span className="live-chip">
-                {isHistoricalView ? 'Historical mode' : 'Live feed'} · {connectionStatus}
+                {isHistoricalView
+                  ? 'Historical mode'
+                  : simulationRunning
+                    ? 'Simulation running'
+                    : 'Live feed'}
+                {' · '}
+                {connectionStatus}
               </span>
             </div>
           </div>

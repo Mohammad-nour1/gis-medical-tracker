@@ -14,7 +14,7 @@ export type AmbulanceMovement = {
 const SYRIA_BOUNDS = {
   minLatitude: 32.3,
   maxLatitude: 37.3,
-  minLongitude: 35.7,
+  minLongitude: 35.9,
   maxLongitude: 42.4
 }
 
@@ -29,8 +29,8 @@ export class ScenarioGenerator {
   }
 
   static createIncrementalMovement(ambulanceId: string, currentLocation: Coordinates): AmbulanceMovement {
-    const deltaLatitude = (Math.random() - 0.5) * 0.01
-    const deltaLongitude = (Math.random() - 0.5) * 0.01
+    const deltaLatitude = (Math.random() - 0.5) * 0.008
+    const deltaLongitude = (Math.random() - 0.5) * 0.008
 
     const newLatitude = this.clamp(
       currentLocation.latitude + deltaLatitude,
@@ -39,7 +39,7 @@ export class ScenarioGenerator {
     )
     const newLongitude = this.clamp(
       currentLocation.longitude + deltaLongitude,
-      SYRIA_BOUNDS.minLongitude,
+      this.minSafeLongitude(newLatitude),
       SYRIA_BOUNDS.maxLongitude
     )
 
@@ -47,6 +47,11 @@ export class ScenarioGenerator {
       ambulanceId,
       newLocation: { latitude: newLatitude, longitude: newLongitude }
     }
+  }
+
+  private static minSafeLongitude(latitude: number): number {
+    if (latitude >= 34.4 && latitude <= 36.2) return 35.92
+    return SYRIA_BOUNDS.minLongitude
   }
 
   private static clamp(value: number, min: number, max: number): number {
