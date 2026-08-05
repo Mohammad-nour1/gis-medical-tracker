@@ -48,7 +48,7 @@ export function FacilityFilters({ filter, governorates, onChange }: FacilityFilt
           ))}
         </div>
       ) : (
-        <p className="filter-help mb-3">Facility filters do not hide ambulances unless Ambulance Status is set to Hide.</p>
+        <p className="filter-help mb-3">Facility filters do not hide ambulances unless Ambulance Status is set to Hide</p>
       )}
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">

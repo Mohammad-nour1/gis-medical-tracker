@@ -20,9 +20,18 @@ const GOVERNORATE_ALIASES: Record<string, string> = {
   'ريف دمشق': 'Rural Damascus'
 }
 
+const ARABIC_SCRIPT = /[\u0600-\u06FF]/
+
 export function normalizeGovernorate(value: string): string {
-  const trimmed = value.trim()
+  const trimmed = value.normalize('NFC').replace(/\s+/g, ' ').trim()
   return GOVERNORATE_ALIASES[trimmed] ?? trimmed
+}
+
+export function uniqueGovernorateOptions(values: string[]): string[] {
+  const normalized = values.map(normalizeGovernorate)
+  return Array.from(new Set(normalized))
+    .filter(value => value.length > 0 && !ARABIC_SCRIPT.test(value))
+    .sort((left, right) => left.localeCompare(right))
 }
 
 export function governorateMatchValues(value: string): string[] {

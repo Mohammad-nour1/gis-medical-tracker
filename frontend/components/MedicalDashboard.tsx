@@ -24,6 +24,7 @@ import {
   FacilityRecord,
   HistoryBundleRecord
 } from '../types/records'
+import { uniqueGovernorateOptions } from '../../core/shared/governorates'
 
 const SyriaMap = dynamic(
   () => import('../features/map/SyriaMap').then(module => module.SyriaMap),
@@ -91,11 +92,7 @@ function DashboardBody() {
       ])
       setFacilities(nextFacilities)
       setAmbulances(nextAmbulances)
-      setGovernorates(
-        Array.from(new Set(catalogFacilities.map(facility => facility.governorate))).sort((a, b) =>
-          a.localeCompare(b)
-        )
-      )
+      setGovernorates(uniqueGovernorateOptions(catalogFacilities.map(facility => facility.governorate)))
     } catch (error) {
       setErrorMessage(resolveUserMessage(error, 'Failed to load dashboard data'))
     }
@@ -239,26 +236,15 @@ function DashboardBody() {
             </div>
           </div>
           <div className="dashboard-actions">
-            <div className="action-group">
-              <button type="button" className="btn btn-secondary" disabled={isBusy} onClick={handleMonitoringRun}>
-                Run Monitoring
-              </button>
-              <span className="action-hint">Apply flowchart once on current facilities</span>
-            </div>
-            <div className="action-group">
-              <button type="button" className="btn btn-secondary" disabled={isBusy} onClick={handleSimulationTick}>
-                Simulation Tick
-              </button>
-              <span className="action-hint">One fake occupancy update + monitor</span>
-            </div>
-            <div className="action-group">
-              <button type="button" className="btn btn-primary" disabled={isBusy} onClick={toggleSimulation}>
-                {simulationRunning ? 'Stop Simulation' : 'Start Simulation'}
-              </button>
-              <span className="action-hint">
-                {simulationRunning ? 'Stop the auto live feed loop' : 'Auto-run ticks every few seconds'}
-              </span>
-            </div>
+            <button type="button" className="btn btn-secondary" disabled={isBusy} onClick={handleMonitoringRun}>
+              Run Monitoring
+            </button>
+            <button type="button" className="btn btn-secondary" disabled={isBusy} onClick={handleSimulationTick}>
+              Simulation Tick
+            </button>
+            <button type="button" className="btn btn-primary" disabled={isBusy} onClick={toggleSimulation}>
+              {simulationRunning ? 'Stop Simulation' : 'Start Simulation'}
+            </button>
           </div>
         </div>
       </header>
