@@ -22,6 +22,16 @@ function splitValue(value: string): { date: string; time: string } {
   return { date, time: time.slice(0, 5) }
 }
 
+function openNativePicker(input: HTMLInputElement) {
+  try {
+    if (typeof input.showPicker === 'function') {
+      input.showPicker()
+    }
+  } catch {
+    input.focus()
+  }
+}
+
 const presets = [
   { id: '15m', label: '15 min ago', offsetMs: 15 * 60 * 1000 },
   { id: '1h', label: '1 hour ago', offsetMs: 60 * 60 * 1000 },
@@ -66,8 +76,9 @@ export function TimeMachinePicker({ value, onChange, onApply, onReset, isActive 
             <span className="field-label">Date</span>
             <input
               type="date"
-              className="control"
+              className="control control-picker"
               value={date}
+              onClick={event => openNativePicker(event.currentTarget)}
               onChange={event => updatePart(event.target.value, time)}
             />
           </label>
@@ -75,8 +86,9 @@ export function TimeMachinePicker({ value, onChange, onApply, onReset, isActive 
             <span className="field-label">Time</span>
             <input
               type="time"
-              className="control"
+              className="control control-picker"
               value={time}
+              onClick={event => openNativePicker(event.currentTarget)}
               onChange={event => updatePart(date, event.target.value)}
             />
           </label>
