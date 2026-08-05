@@ -28,6 +28,12 @@ export function MapLegend() {
           </span>
         </li>
         <li>
+          <span className="legend-swatch legend-ambulance-dispatched" aria-hidden="true" />
+          <span>
+            <strong>En-route arrow</strong>
+          </span>
+        </li>
+        <li>
           <span className="legend-swatch legend-cluster" aria-hidden="true">8</span>
           <span>
             <strong>Cluster count</strong>

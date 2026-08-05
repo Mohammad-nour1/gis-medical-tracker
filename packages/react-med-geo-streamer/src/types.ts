@@ -22,6 +22,8 @@ export type StreamPayloadMap = {
   'ambulance-location': {
     ambulanceId: string
     location: { latitude: number; longitude: number }
+    headingDeg?: number
+    targetFacilityId?: string | null
   }
   'simulation-tick': {
     processedCount: number

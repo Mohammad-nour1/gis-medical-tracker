@@ -23,6 +23,8 @@ export type AmbulanceRecord = {
   code: string
   location: Coordinates
   status: AmbulanceStatus
+  headingDeg?: number
+  targetFacilityId?: string | null
 }
 
 export type OccupancySnapshotRecord = {

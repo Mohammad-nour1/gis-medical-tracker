@@ -304,7 +304,12 @@ function DashboardBody() {
             </div>
             <div className="map-frame border-0 rounded-none shadow-none">
               <MapLegend />
-              <SyriaMap facilities={facilities} ambulances={ambulances} historicalMode={isHistoricalView} />
+              <SyriaMap
+                facilities={facilities}
+                ambulances={ambulances}
+                historicalMode={isHistoricalView}
+                focusFacilityId={simulationRunning ? latestTick?.payload.emergencyFacilityId ?? null : null}
+              />
             </div>
           </section>
         </div>

@@ -13,15 +13,20 @@ type SyriaMapProps = {
   facilities: FacilityRecord[]
   ambulances: AmbulanceRecord[]
   historicalMode: boolean
+  focusFacilityId?: string | null
 }
 
-function facilityIcon(status: FacilityRecord['status']) {
+function facilityIcon(status: FacilityRecord['status'], emphasized: boolean) {
   const color = status === 'RED' ? designTokens.color.statusRed : designTokens.color.statusGreen
-  const size = designTokens.map.facilityMarkerSize
+  const size = emphasized ? designTokens.map.facilityMarkerSize + 6 : designTokens.map.facilityMarkerSize
   const glow = status === 'RED' ? 'rgba(255,92,122,0.55)' : 'rgba(45,212,160,0.55)'
+  const ring = emphasized
+    ? `<span style="position:absolute;inset:-10px;border-radius:9999px;border:2px solid ${color};opacity:.55;"></span>`
+    : ''
   return L.divIcon({
     className: 'geo-marker',
     html: `<div style="position:relative;width:${size}px;height:${size}px;">
+      ${ring}
       <span style="position:absolute;inset:-6px;border-radius:9999px;background:${glow};filter:blur(6px);opacity:.85;"></span>
       <span style="position:absolute;inset:0;border-radius:9999px;border:2px solid rgba(255,255,255,.92);background:${color};box-shadow:0 0 12px ${glow};"></span>
     </div>`,
@@ -30,29 +35,34 @@ function facilityIcon(status: FacilityRecord['status']) {
   })
 }
 
-function ambulanceIcon(status: AmbulanceRecord['status']) {
-  const color = status === 'dispatched'
+function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, enRoute?: boolean) {
+  const color = status === 'dispatched' || enRoute
     ? designTokens.color.ambulanceDispatched
     : designTokens.color.ambulanceAvailable
-  const size = designTokens.map.ambulanceMarkerSize
-  const glow = status === 'dispatched' ? 'rgba(251,191,36,0.55)' : 'rgba(56,189,248,0.55)'
+  const size = designTokens.map.ambulanceMarkerSize + (enRoute ? 4 : 0)
+  const glow = status === 'dispatched' || enRoute ? 'rgba(251,191,36,0.55)' : 'rgba(56,189,248,0.55)'
+  const rotation = headingDeg ?? 45
+  const arrow = headingDeg == null
+    ? ''
+    : `<span style="position:absolute;left:50%;top:-11px;transform:translateX(-50%) rotate(${headingDeg}deg);transform-origin:50% 160%;font-size:11px;line-height:1;color:${color};text-shadow:0 0 6px ${glow};">▲</span>`
   return L.divIcon({
     className: 'geo-marker',
-    html: `<div style="position:relative;width:${size}px;height:${size}px;">
-      <span style="position:absolute;inset:-5px;border-radius:6px;background:${glow};filter:blur(5px);opacity:.8;"></span>
-      <span style="position:absolute;inset:0;border-radius:5px;border:2px solid rgba(255,255,255,.92);background:${color};transform:rotate(45deg);box-shadow:0 0 10px ${glow};"></span>
+    html: `<div style="position:relative;width:${size + 8}px;height:${size + 14}px;">
+      ${arrow}
+      <span style="position:absolute;left:50%;top:50%;width:${size}px;height:${size}px;margin-left:-${size / 2}px;margin-top:-${size / 2}px;border-radius:5px;border:2px solid rgba(255,255,255,.92);background:${color};transform:rotate(${enRoute ? rotation : 45}deg);box-shadow:0 0 10px ${glow};"></span>
     </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2]
+    iconSize: [size + 8, size + 14],
+    iconAnchor: [(size + 8) / 2, (size + 14) / 2]
   })
 }
 
-export function SyriaMap({ facilities, ambulances, historicalMode }: SyriaMapProps) {
+export function SyriaMap({ facilities, ambulances, historicalMode, focusFacilityId = null }: SyriaMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const facilityClusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const ambulanceLayerRef = useRef<L.LayerGroup | null>(null)
   const ambulanceMarkersRef = useRef<Map<string, L.Marker>>(new Map())
+  const lastFocusRef = useRef<string | null>(null)
 
   const locationEvents = useGeoMedStreamEvents('ambulance-location')
   const dispatchEvents = useGeoMedStreamEvents('ambulance-dispatched')
@@ -78,7 +88,9 @@ export function SyriaMap({ facilities, ambulances, historicalMode }: SyriaMapPro
       if (current) {
         next.set(event.payload.ambulanceId, {
           ...current,
-          location: event.payload.location
+          location: event.payload.location,
+          headingDeg: event.payload.headingDeg,
+          targetFacilityId: event.payload.targetFacilityId ?? null
         })
       }
     }
@@ -168,9 +180,11 @@ export function SyriaMap({ facilities, ambulances, historicalMode }: SyriaMapPro
     if (!cluster) return
     cluster.clearLayers()
     for (const facility of liveFacilities) {
+      const emphasized = focusFacilityId === facility.id
       const marker = L.marker([facility.location.latitude, facility.location.longitude], {
-        icon: facilityIcon(facility.status),
-        facilityStatus: facility.status
+        icon: facilityIcon(facility.status, emphasized),
+        facilityStatus: facility.status,
+        zIndexOffset: emphasized ? 600 : 0
       } as L.MarkerOptions & { facilityStatus: FacilityRecord['status'] })
       marker.bindPopup(`
         <strong>${facility.name}</strong><br/>
@@ -180,7 +194,7 @@ export function SyriaMap({ facilities, ambulances, historicalMode }: SyriaMapPro
       `)
       cluster.addLayer(marker)
     }
-  }, [liveFacilities])
+  }, [liveFacilities, focusFacilityId])
 
   useEffect(() => {
     const layer = ambulanceLayerRef.current
@@ -197,18 +211,34 @@ export function SyriaMap({ facilities, ambulances, historicalMode }: SyriaMapPro
 
     for (const ambulance of liveAmbulances) {
       const position: L.LatLngExpression = [ambulance.location.latitude, ambulance.location.longitude]
+      const enRoute = Boolean(ambulance.targetFacilityId)
+      const icon = ambulanceIcon(ambulance.status, ambulance.headingDeg, enRoute)
       const existing = ambulanceMarkersRef.current.get(ambulance.id)
       if (existing) {
         existing.setLatLng(position)
-        existing.setIcon(ambulanceIcon(ambulance.status))
+        existing.setIcon(icon)
+        existing.setZIndexOffset(enRoute ? 700 : 200)
         continue
       }
-      const marker = L.marker(position, { icon: ambulanceIcon(ambulance.status) })
+      const marker = L.marker(position, { icon, zIndexOffset: enRoute ? 700 : 200 })
       marker.bindPopup(`<strong>${ambulance.code}</strong><br/>Status: ${ambulance.status}`)
       ambulanceMarkersRef.current.set(ambulance.id, marker)
       layer.addLayer(marker)
     }
   }, [liveAmbulances])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !focusFacilityId || historicalMode) return
+    if (lastFocusRef.current === focusFacilityId) return
+    const target = liveFacilities.find(facility => facility.id === focusFacilityId)
+    if (!target) return
+    lastFocusRef.current = focusFacilityId
+    map.flyTo([target.location.latitude, target.location.longitude], Math.max(map.getZoom(), 8), {
+      animate: true,
+      duration: 0.85
+    })
+  }, [focusFacilityId, liveFacilities, historicalMode])
 
   return <div ref={mapContainerRef} className="map-shell" />
 }
