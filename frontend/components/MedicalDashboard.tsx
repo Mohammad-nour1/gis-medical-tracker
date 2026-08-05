@@ -63,10 +63,12 @@ function DashboardBody() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [simulationRunning, setSimulationRunning] = useState(false)
   const [isBusy, setIsBusy] = useState(false)
+  const [statsPulse, setStatsPulse] = useState(false)
 
   const connectionStatus = useGeoMedConnectionStatus()
   const simulationTicks = useGeoMedStreamEvents('simulation-tick')
-  const latestTickId = simulationTicks[0]?.id
+  const latestTick = simulationTicks[0]
+  const latestTickId = latestTick?.id
 
   const stats = useMemo(() => {
     const red = facilities.filter(facility => facility.status === 'RED').length
@@ -106,10 +108,19 @@ function DashboardBody() {
   useEffect(() => {
     if (!latestTickId || isHistoricalView) return
     refreshData()
-    if (simulationRunning) {
-      setSuccessMessage(`Simulation tick update · ${new Date().toLocaleTimeString()}`)
+    if (simulationRunning && latestTick) {
+      const facilityName = latestTick.payload.emergencyFacilityName
+      const bedsIncrease = latestTick.payload.occupiedBedsIncrease
+      setSuccessMessage(
+        facilityName && bedsIncrease
+          ? `Live update · ${facilityName} (+${bedsIncrease} beds)`
+          : `Live update · ${new Date().toLocaleTimeString()}`
+      )
+      setStatsPulse(true)
+      const timer = window.setTimeout(() => setStatsPulse(false), 700)
+      return () => window.clearTimeout(timer)
     }
-  }, [latestTickId, isHistoricalView, refreshData, simulationRunning])
+  }, [latestTickId, latestTick, isHistoricalView, refreshData, simulationRunning])
 
   async function applyHistoricalView() {
     if (!timeMachineValue) {
@@ -199,7 +210,7 @@ function DashboardBody() {
         setSuccessMessage('Simulation stopped')
         return
       }
-      await startSimulation(5000)
+      await startSimulation(2500)
       setSimulationRunning(true)
       setSuccessMessage('Simulation started')
     } catch (error) {
@@ -258,7 +269,7 @@ function DashboardBody() {
         </div>
       </header>
 
-      <div className="stats-strip">
+      <div className={`stats-strip${statsPulse ? ' stats-strip-pulse' : ''}`}>
         <article className="stat-card">
           <p className="stat-label">Critical RED</p>
           <p className="stat-value stat-red">{stats.red}</p>

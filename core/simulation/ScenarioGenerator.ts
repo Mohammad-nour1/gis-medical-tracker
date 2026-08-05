@@ -23,14 +23,14 @@ export class ScenarioGenerator {
     const randomFacilityId = facilityIds[Math.floor(Math.random() * facilityIds.length)]
     return {
       facilityId: randomFacilityId,
-      occupiedBedsIncrease: Math.floor(Math.random() * 20) + 5,
+      occupiedBedsIncrease: Math.floor(Math.random() * 11) + 8,
       triggeredAt: new Date()
     }
   }
 
   static createIncrementalMovement(ambulanceId: string, currentLocation: Coordinates): AmbulanceMovement {
-    const deltaLatitude = (Math.random() - 0.5) * 0.008
-    const deltaLongitude = (Math.random() - 0.5) * 0.008
+    const deltaLatitude = (Math.random() - 0.5) * 0.012
+    const deltaLongitude = (Math.random() - 0.5) * 0.012
 
     const newLatitude = this.clamp(
       currentLocation.latitude + deltaLatitude,

@@ -78,7 +78,10 @@ export class RunSimulationTick {
 
     await this.realtimeBroadcaster.broadcast('medical-stream', 'simulation-tick', {
       processedCount: updatedFacilities.length,
-      triggeredAt: new Date().toISOString()
+      triggeredAt: new Date().toISOString(),
+      emergencyFacilityId: targetFacility.id,
+      emergencyFacilityName: targetFacility.name,
+      occupiedBedsIncrease: emergency.occupiedBedsIncrease
     })
 
     return {

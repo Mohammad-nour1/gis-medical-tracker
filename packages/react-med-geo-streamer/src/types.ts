@@ -26,6 +26,9 @@ export type StreamPayloadMap = {
   'simulation-tick': {
     processedCount: number
     triggeredAt: string
+    emergencyFacilityId: string | null
+    emergencyFacilityName: string | null
+    occupiedBedsIncrease: number | null
   }
 }
 

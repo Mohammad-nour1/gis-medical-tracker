@@ -37,7 +37,7 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
 
 - **Run Monitoring**: تشغيل دورة المخطط مرة واحدة على المنشآت الحالية
 - **Simulation Tick**: تحديث إشغال وهمي واحد ثم مراقبة
-- **Start / Stop Simulation**: تكرار تلقائي للـ tick كل عدة ثوانٍ أو إيقافه. راقب الإحصائيات والخريطة وشارة Simulation running
+- **Start / Stop Simulation**: تحديث كل 2.5 ثانية مع رسالة مباشرة عن المنشأة اللي زاد إشغالها ونبضة خفيفة على الإحصائيات
 
 ## البنية
 
