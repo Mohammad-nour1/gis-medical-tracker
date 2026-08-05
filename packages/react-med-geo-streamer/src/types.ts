@@ -9,10 +9,12 @@ export type StreamPayloadMap = {
   'occupancy-critical': {
     facilityId: string
     facilityName: string
+    availableBeds?: number
   }
   'status-changed': {
     facilityId: string
     status: 'RED' | 'GREEN'
+    availableBeds?: number
   }
   'ambulance-dispatched': {
     facilityId: string

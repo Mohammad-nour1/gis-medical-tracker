@@ -49,6 +49,12 @@ export type HistoryBundleRecord = {
   ambulanceSnapshots: AmbulanceLocationSnapshotRecord[]
 }
 
+export function isHistoryBundleRecord(value: unknown): value is HistoryBundleRecord {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const candidate = value as Partial<HistoryBundleRecord>
+  return Array.isArray(candidate.occupancySnapshots) && Array.isArray(candidate.ambulanceSnapshots)
+}
+
 export type FacilityFilterState = {
   type: FacilityType | 'all'
   governorate: string | 'all'

@@ -1,6 +1,7 @@
 'use client'
 
 import { useGeoMedStreamEvents, useGeoMedConnectionStatus } from 'react-med-geo-streamer'
+import { OCCUPANCY_CRITICAL_THRESHOLD_PERCENT } from '../../../core/shared/occupancy'
 
 export function AlertsPanel() {
   const alerts = useGeoMedStreamEvents('occupancy-critical')
@@ -14,7 +15,7 @@ export function AlertsPanel() {
       </div>
       {alerts.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">
-          Alerts appear when a facility crosses into RED (occupancy over 90%)
+          Alerts appear when a facility crosses into RED (occupancy over {OCCUPANCY_CRITICAL_THRESHOLD_PERCENT}%)
         </p>
       ) : (
         <ul className="max-h-48 space-y-2 overflow-y-auto">

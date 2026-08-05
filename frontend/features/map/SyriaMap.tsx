@@ -7,7 +7,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster'
 import { useGeoMedStreamEvents } from 'react-med-geo-streamer'
 import { AmbulanceRecord, FacilityRecord } from '../../types/records'
-import { designTokens } from '../../design/tokens'
+import { designTokens, withAlpha } from '../../design/tokens'
 
 type SyriaMapProps = {
   facilities: FacilityRecord[]
@@ -28,7 +28,7 @@ type MotionTrack = {
 function facilityIcon(status: FacilityRecord['status'], emphasized: boolean) {
   const color = status === 'RED' ? designTokens.color.statusRed : designTokens.color.statusGreen
   const size = emphasized ? designTokens.map.facilityMarkerSize + 8 : designTokens.map.facilityMarkerSize
-  const glow = status === 'RED' ? 'rgba(255,92,122,0.55)' : 'rgba(45,212,160,0.55)'
+  const glow = withAlpha(color, 0.55)
   const ring = emphasized
     ? `<span class="facility-pulse-ring" style="border-color:${color};"></span>`
     : ''
@@ -37,7 +37,7 @@ function facilityIcon(status: FacilityRecord['status'], emphasized: boolean) {
     html: `<div style="position:relative;width:${size}px;height:${size}px;">
       ${ring}
       <span style="position:absolute;inset:-6px;border-radius:9999px;background:${glow};filter:blur(6px);opacity:.85;"></span>
-      <span style="position:absolute;inset:0;border-radius:9999px;border:2px solid rgba(255,255,255,.92);background:${color};box-shadow:0 0 12px ${glow};"></span>
+      <span style="position:absolute;inset:0;border-radius:9999px;border:2px solid ${designTokens.color.markerBorder};background:${color};box-shadow:0 0 12px ${glow};"></span>
     </div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2]
@@ -49,7 +49,7 @@ function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, e
     ? designTokens.color.ambulanceDispatched
     : designTokens.color.ambulanceAvailable
   const size = designTokens.map.ambulanceMarkerSize + (enRoute ? 2 : 0)
-  const glow = status === 'dispatched' ? 'rgba(251,191,36,0.55)' : 'rgba(56,189,248,0.45)'
+  const glow = withAlpha(color, status === 'dispatched' ? 0.55 : 0.45)
   const arrowSpace = enRoute ? 9 : 0
   const box = size + 4
   const height = size + arrowSpace + 4
@@ -62,7 +62,7 @@ function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, e
     className: 'geo-marker',
     html: `<div style="position:relative;width:${box}px;height:${height}px;">
       ${arrow}
-      <span style="position:absolute;left:50%;top:${diamondTop}px;width:${size}px;height:${size}px;margin-left:-${size / 2}px;border-radius:3px;border:2px solid #fff;background:${color};transform:rotate(45deg);box-shadow:0 0 8px ${glow};"></span>
+      <span style="position:absolute;left:50%;top:${diamondTop}px;width:${size}px;height:${size}px;margin-left:-${size / 2}px;border-radius:3px;border:2px solid ${designTokens.color.markerBorder};background:${color};transform:rotate(45deg);box-shadow:0 0 8px ${glow};"></span>
     </div>`,
     iconSize: [box, height],
     iconAnchor: [box / 2, diamondTop + size / 2]
@@ -181,7 +181,7 @@ export function SyriaMap({
 
     facilityClusterRef.current = L.markerClusterGroup({
       showCoverageOnHover: false,
-      maxClusterRadius: 55,
+      maxClusterRadius: designTokens.map.clusterRadius,
       spiderfyOnMaxZoom: true,
       iconCreateFunction(cluster) {
         const childMarkers = cluster.getAllChildMarkers()
@@ -194,7 +194,7 @@ export function SyriaMap({
         const count = childMarkers.length
         const mostlyRed = redCount >= count / 2
         const color = mostlyRed ? designTokens.color.statusRed : designTokens.color.statusGreen
-        const size = count >= 10 ? 46 : 38
+        const size = count >= 10 ? designTokens.map.clusterSizeLarge : designTokens.map.clusterSizeSmall
         return L.divIcon({
           html: `<div class="facility-cluster" style="--cluster-color:${color};width:${size}px;height:${size}px;">${count}</div>`,
           className: 'facility-cluster-wrap',
@@ -307,7 +307,7 @@ export function SyriaMap({
             toLat: targetLat,
             toLng: targetLng,
             startedAt: now,
-            durationMs: enRoute ? 2200 : 900
+            durationMs: enRoute ? designTokens.map.motionMsEnRoute : designTokens.map.motionMsIdle
           })
         }
         continue

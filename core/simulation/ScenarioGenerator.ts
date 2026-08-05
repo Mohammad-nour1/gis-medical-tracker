@@ -1,4 +1,5 @@
 import { Coordinates, Facility } from '../entities/Facility'
+import { OCCUPANCY_CRITICAL_THRESHOLD_PERCENT } from '../shared/occupancy'
 
 export type EmergencyScenario = {
   facilityId: string
@@ -55,7 +56,7 @@ export class ScenarioGenerator {
       }
     }
 
-    const thresholdOccupied = Math.floor(target.totalBeds * 0.9) + 1
+    const thresholdOccupied = Math.floor(target.totalBeds * (OCCUPANCY_CRITICAL_THRESHOLD_PERCENT / 100)) + 1
     const neededToCross = Math.max(0, thresholdOccupied - target.occupiedBeds)
     const occupiedBedsIncrease = Math.min(
       target.totalBeds - target.occupiedBeds,

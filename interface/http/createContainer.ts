@@ -27,7 +27,7 @@ export function createApplicationContainer(io: SocketServer) {
   const idGenerator = new CryptoIdGenerator()
 
   const calculateAvailableBeds = new CalculateAvailableBeds()
-  const evaluateOccupancyStatus = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy(90))
+  const evaluateOccupancyStatus = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy())
   const findNearestAmbulance = new FindNearestAmbulance(ambulanceRepository, geoDistanceCalculator)
   const assignRouteAndDispatch = new AssignRouteAndDispatch(
     routeAssignmentRepository,

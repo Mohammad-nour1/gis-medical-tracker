@@ -43,7 +43,7 @@ test('simulation emergency prefers GREEN and pushes occupancy past 90 percent', 
       green.status
     )
     const availableBeds = new CalculateAvailableBeds().execute(updated)
-    const status = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy(90)).execute(
+    const status = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy()).execute(
       updated,
       availableBeds
     )

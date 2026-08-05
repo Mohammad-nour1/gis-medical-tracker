@@ -22,7 +22,7 @@ import {
   AmbulanceRecord,
   FacilityFilterState,
   FacilityRecord,
-  HistoryBundleRecord
+  isHistoryBundleRecord
 } from '../types/records'
 import { uniqueGovernorateOptions } from '../../core/shared/governorates'
 
@@ -161,11 +161,11 @@ function DashboardBody() {
     try {
       const timestamp = new Date(timeMachineValue).toISOString()
       const history = await fetchHistorySnapshot(timestamp)
-      if (!history || Array.isArray(history) || !('occupancySnapshots' in history)) {
+      if (!isHistoryBundleRecord(history)) {
         setErrorMessage('No historical snapshots found for the selected time')
         return
       }
-      const bundle = history as HistoryBundleRecord
+      const bundle = history
       if (bundle.occupancySnapshots.length === 0) {
         setErrorMessage('No occupancy history found for the selected time')
         return
@@ -219,7 +219,11 @@ function DashboardBody() {
     setIsBusy(true)
     try {
       const result = await triggerSimulationTick()
-      setSuccessMessage(`Simulation tick processed ${result.processedCount} emergency facility`)
+      setSuccessMessage(
+        result.processedCount === 1
+          ? 'Simulation tick processed 1 emergency facility'
+          : `Simulation tick processed ${result.processedCount} emergency facilities`
+      )
     } catch (error) {
       setErrorMessage(resolveUserMessage(error, 'Simulation tick failed'))
     } finally {
@@ -243,7 +247,7 @@ function DashboardBody() {
       await startSimulation(2500)
       setSimulationRunning(true)
       setSimStory(null)
-      setSimHint('Zoom to Damascus. Only the nearest 2 ambulances will move.')
+      setSimHint('Simulation running. Nearest available units will respond to the active facility.')
       setSuccessMessage(null)
     } catch (error) {
       setErrorMessage(resolveUserMessage(error, 'Simulation control failed'))
@@ -327,26 +331,26 @@ function DashboardBody() {
           {successMessage && <p className="alert-success" role="status">{successMessage}</p>}
           {(simStory || simHint) && (
             <div className="sim-story" role="status">
-              <p className="sim-story-label">What you should see</p>
+              <p className="sim-story-label">Live activity</p>
               {simHint && !simStory ? (
                 <p className="sim-story-line">{simHint}</p>
               ) : null}
               {simStory ? (
                 <ol className="sim-story-steps">
                   <li>
-                    <span>Busy hospital</span>
+                    <span>Facility</span>
                     <strong>{simStory.hospital}</strong>
                     <em>+{simStory.beds} beds</em>
                   </li>
                   <li>
-                    <span>Moving now</span>
-                    <strong>Nearest {simStory.responders} ambulances</strong>
-                    <em>white arrow</em>
+                    <span>Response</span>
+                    <strong>{simStory.responders} nearest units</strong>
+                    <em>en route</em>
                   </li>
                   <li>
-                    <span>If critical</span>
-                    <strong>RED alert</strong>
-                    <em>then yellow = sent</em>
+                    <span>Escalation</span>
+                    <strong>Critical alert</strong>
+                    <em>dispatch if RED</em>
                   </li>
                 </ol>
               ) : null}

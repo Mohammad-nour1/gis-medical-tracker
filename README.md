@@ -18,6 +18,8 @@ cp .env.example .env.local   # Windows: copy .env.example .env.local
 
 `infrastructure/database/migrations/000_full_setup.sql`
 
+(الترقيم يبدأ بـ `000` ثم تكمل تحسينات لاحقة `004`–`008`؛ لا توجد `001`–`003` منفصلة.)
+
 ```bash
 npm run dev    # http://localhost:3000
 npm test
@@ -74,6 +76,14 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
 | `frontend/` | Dashboard |
 | `packages/react-med-geo-streamer/` | Stream state @2.1.0 |
 | `server.ts` | Next + Express + Socket.io في عملية واحدة |
+
+---
+
+## Design system
+
+UI colors and radii live in CSS variables (`app/globals.css`).  
+Map marker colors/sizes/motion use the same palette via `frontend/design/tokens.ts` (`withAlpha` for glow variants).  
+Critical occupancy threshold is centralized in `core/shared/occupancy.ts`.
 
 ---
 

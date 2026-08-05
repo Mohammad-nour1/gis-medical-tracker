@@ -21,13 +21,13 @@ test('CalculateAvailableBeds returns total minus occupied', () => {
 })
 
 test('EvaluateOccupancyStatus marks RED above 90 percent', () => {
-  const useCase = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy(90))
+  const useCase = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy())
   const availableBeds = new CalculateAvailableBeds().execute(sampleFacility)
   assert.equal(useCase.execute(sampleFacility, availableBeds), 'RED')
 })
 
 test('EvaluateOccupancyStatus marks GREEN at or below 90 percent', () => {
-  const useCase = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy(90))
+  const useCase = new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy())
   const greenFacility = new Facility(
     sampleFacility.id,
     sampleFacility.name,
