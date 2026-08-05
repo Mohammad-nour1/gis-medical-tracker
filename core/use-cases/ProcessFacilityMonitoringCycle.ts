@@ -22,8 +22,9 @@ export class ProcessFacilityMonitoringCycle {
   ) {}
 
   async execute(facility: Facility): Promise<void> {
-    this.calculateAvailableBeds.execute(facility)
-    const status = this.evaluateOccupancyStatus.execute(facility)
+    const previousStatus = facility.status
+    const availableBeds = this.calculateAvailableBeds.execute(facility)
+    const status = this.evaluateOccupancyStatus.execute(facility, availableBeds)
     await this.facilityRepository.updateStatus(facility.id, status)
 
     const updatedFacility = new Facility(
@@ -38,12 +39,21 @@ export class ProcessFacilityMonitoringCycle {
     )
 
     if (status === 'RED') {
-      await this.realtimeBroadcaster.broadcast('medical-stream', 'occupancy-critical', {
-        facilityId: facility.id,
-        facilityName: facility.name
-      })
-      const nearestAmbulance = await this.findNearestAmbulance.execute(updatedFacility)
-      await this.assignRouteAndDispatch.execute(updatedFacility, nearestAmbulance)
+      if (previousStatus !== 'RED') {
+        await this.realtimeBroadcaster.broadcast('medical-stream', 'occupancy-critical', {
+          facilityId: facility.id,
+          facilityName: facility.name,
+          availableBeds
+        })
+        const nearestAmbulance = await this.findNearestAmbulance.execute(updatedFacility)
+        await this.assignRouteAndDispatch.execute(updatedFacility, nearestAmbulance)
+      } else {
+        await this.realtimeBroadcaster.broadcast('medical-stream', 'status-changed', {
+          facilityId: facility.id,
+          status,
+          availableBeds
+        })
+      }
     } else {
       await this.assignRouteAndDispatch.execute(updatedFacility, null)
     }

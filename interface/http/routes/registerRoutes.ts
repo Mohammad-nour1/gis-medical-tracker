@@ -17,6 +17,7 @@ import {
 } from '../dto/responseDtos'
 
 let simulationInterval: NodeJS.Timeout | null = null
+let simulationTickInFlight = false
 
 export function registerRoutes(app: Express, container: ApplicationContainer): void {
   app.get('/api/facilities', asyncHandler(async (request, response) => {
@@ -54,11 +55,6 @@ export function registerRoutes(app: Express, container: ApplicationContainer): v
     })
   }))
 
-  app.get('/api/monitoring/run', asyncHandler(async (_request, response) => {
-    const processedCount = await runMonitoring(container)
-    response.json({ processedCount })
-  }))
-
   app.post('/api/monitoring/run', asyncHandler(async (_request, response) => {
     const processedCount = await runMonitoring(container)
     response.json({ processedCount })
@@ -73,7 +69,7 @@ export function registerRoutes(app: Express, container: ApplicationContainer): v
     const intervalMs = parseSimulationStartBody(request.body)
     stopSimulationLoop()
     simulationInterval = setInterval(() => {
-      container.runSimulationTick.execute().catch(() => undefined)
+      void runSimulationTickSafely(container)
     }, intervalMs)
     response.json({ started: true, intervalMs })
   }))
@@ -101,9 +97,22 @@ async function runMonitoring(container: ApplicationContainer): Promise<number> {
   return facilities.length
 }
 
+async function runSimulationTickSafely(container: ApplicationContainer): Promise<void> {
+  if (simulationTickInFlight) return
+  simulationTickInFlight = true
+  try {
+    await container.runSimulationTick.execute()
+  } catch (error) {
+    process.stderr.write(`Simulation tick failed: ${error}\n`)
+  } finally {
+    simulationTickInFlight = false
+  }
+}
+
 function stopSimulationLoop(): void {
   if (simulationInterval) {
     clearInterval(simulationInterval)
     simulationInterval = null
   }
+  simulationTickInFlight = false
 }

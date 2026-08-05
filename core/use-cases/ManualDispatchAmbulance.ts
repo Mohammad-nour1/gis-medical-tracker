@@ -1,15 +1,14 @@
-import { Facility } from '../entities/Facility'
-import { Ambulance } from '../entities/Ambulance'
-import { RouteAssignment } from '../entities/RouteAssignment'
 import { AmbulanceRepository } from '../ports/AmbulanceRepository'
 import { FacilityRepository } from '../ports/FacilityRepository'
 import { NotFoundError, ConflictError } from '../errors/AppError'
+import { AssignRouteAndDispatch } from './AssignRouteAndDispatch'
+import { RouteAssignment } from '../entities/RouteAssignment'
 
 export class ManualDispatchAmbulance {
   constructor(
     private readonly facilityRepository: FacilityRepository,
     private readonly ambulanceRepository: AmbulanceRepository,
-    private readonly assignRouteAndDispatch: AssignRouteAndDispatchLike
+    private readonly assignRouteAndDispatch: AssignRouteAndDispatch
   ) {}
 
   async execute(facilityId: string, ambulanceId: string): Promise<RouteAssignment> {
@@ -25,8 +24,4 @@ export class ManualDispatchAmbulance {
 
     return this.assignRouteAndDispatch.execute(facility, ambulance)
   }
-}
-
-interface AssignRouteAndDispatchLike {
-  execute(facility: Facility, ambulance: Ambulance | null): Promise<RouteAssignment>
 }

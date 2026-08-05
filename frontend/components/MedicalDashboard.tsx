@@ -126,28 +126,28 @@ function DashboardBody() {
 
       const occupancyMap = new Map(bundle.occupancySnapshots.map(snapshot => [snapshot.facilityId, snapshot]))
       setFacilities(current =>
-        current.map(facility => {
+        current.flatMap(facility => {
           const snapshot = occupancyMap.get(facility.id)
-          if (!snapshot) return facility
-          return {
+          if (!snapshot) return []
+          return [{
             ...facility,
             occupiedBeds: snapshot.occupiedBeds,
             totalBeds: snapshot.totalBeds,
             status: snapshot.status
-          }
+          }]
         })
       )
 
       const ambulanceMap = new Map(bundle.ambulanceSnapshots.map(snapshot => [snapshot.ambulanceId, snapshot]))
       setAmbulances(current =>
-        current.map(ambulance => {
+        current.flatMap(ambulance => {
           const snapshot = ambulanceMap.get(ambulance.id)
-          if (!snapshot) return ambulance
-          return {
+          if (!snapshot) return []
+          return [{
             ...ambulance,
             location: snapshot.location,
             status: snapshot.status
-          }
+          }]
         })
       )
 

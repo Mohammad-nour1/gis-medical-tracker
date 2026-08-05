@@ -27,10 +27,6 @@ export class PostgresFacilityRepository implements FacilityRepository {
     return this.mapRowToFacility(result.rows[0])
   }
 
-  async findByGovernorate(governorate: string): Promise<Facility[]> {
-    return this.findWithFilters({ governorate })
-  }
-
   async findWithFilters(filter: FacilityFilter): Promise<Facility[]> {
     const conditions: string[] = []
     const values: unknown[] = []

@@ -29,7 +29,6 @@ class FakeFacilityRepository implements FacilityRepository {
   public statuses: Array<{ id: string; status: Facility['status'] }> = []
   async findAll() { return [] }
   async findById() { return null }
-  async findByGovernorate() { return [] }
   async findWithFilters() { return [] }
   async updateStatus(id: string, status: Facility['status']) {
     this.statuses.push({ id, status })
@@ -126,8 +125,55 @@ test('RED path triggers alert then nearest ambulance then dispatch', async () =>
   assert.equal(facilityRepository.statuses[0]?.status, 'RED')
   assert.equal(broadcaster.events[0]?.event, 'occupancy-critical')
   assert.equal(routeAssignmentRepository.assignments[0]?.ambulanceId, 'amb-1')
+  assert.equal(broadcaster.events.some(event => event.event === 'status-changed'), true)
   assert.equal(broadcaster.events.some(event => event.event === 'ambulance-dispatched'), true)
   assert.equal(occupancySnapshotRepository.records.length, 1)
+})
+
+test('already RED facility does not consume another ambulance', async () => {
+  const facilityRepository = new FakeFacilityRepository()
+  const occupancySnapshotRepository = new FakeOccupancySnapshotRepository()
+  const nearest = new Ambulance('amb-1', 'AMB-01', { latitude: 33.51, longitude: 36.31 }, 'available')
+  const ambulanceRepository = new FakeAmbulanceRepository([nearest])
+  const routeAssignmentRepository = new FakeRouteAssignmentRepository()
+  const broadcaster = new FakeBroadcaster()
+  const idGenerator = new FakeIdGenerator()
+
+  const assignRouteAndDispatch = new AssignRouteAndDispatch(
+    routeAssignmentRepository,
+    ambulanceRepository,
+    broadcaster,
+    idGenerator
+  )
+
+  const cycle = new ProcessFacilityMonitoringCycle(
+    facilityRepository,
+    occupancySnapshotRepository,
+    new CalculateAvailableBeds(),
+    new EvaluateOccupancyStatus(new DefaultOccupancyThresholdStrategy(90)),
+    new FindNearestAmbulance(ambulanceRepository, new FakeGeoDistanceCalculator(nearest)),
+    assignRouteAndDispatch,
+    broadcaster,
+    idGenerator
+  )
+
+  const alreadyRed = new Facility(
+    'facility-1',
+    'Damascus Central',
+    'hospital',
+    'Damascus',
+    100,
+    95,
+    { latitude: 33.5, longitude: 36.3 },
+    'RED'
+  )
+
+  await cycle.execute(alreadyRed)
+
+  assert.equal(routeAssignmentRepository.assignments.length, 0)
+  assert.equal(nearest.status, 'available')
+  assert.equal(broadcaster.events.some(event => event.event === 'occupancy-critical'), false)
+  assert.equal(broadcaster.events.some(event => event.event === 'status-changed'), true)
 })
 
 test('GREEN path never dispatches ambulance and still assigns route record', async () => {

@@ -8,7 +8,3 @@ export class SocketIOBroadcaster implements RealtimeBroadcaster {
     this.socketServer.emit(event, payload)
   }
 }
-
-export class NullRealtimeBroadcaster implements RealtimeBroadcaster {
-  async broadcast(): Promise<void> {}
-}

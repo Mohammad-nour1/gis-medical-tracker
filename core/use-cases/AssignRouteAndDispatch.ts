@@ -33,6 +33,10 @@ export class AssignRouteAndDispatch {
     )
     await this.routeAssignmentRepository.save(assignment)
     await this.ambulanceRepository.updateStatus(ambulance.id, 'dispatched')
+    await this.realtimeBroadcaster.broadcast('medical-stream', 'status-changed', {
+      facilityId: facility.id,
+      status: facility.status
+    })
     await this.realtimeBroadcaster.broadcast('medical-stream', 'ambulance-dispatched', {
       facilityId: facility.id,
       ambulanceId: ambulance.id,

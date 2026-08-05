@@ -47,11 +47,6 @@ export type RouteAssignmentDto = {
   dispatchedAt: string
 }
 
-export type HistoryBundleDto = {
-  occupancySnapshots: OccupancySnapshotDto[]
-  ambulanceSnapshots: AmbulanceLocationSnapshotDto[]
-}
-
 export function toFacilityDto(facility: Facility): FacilityDto {
   return {
     id: facility.id,
