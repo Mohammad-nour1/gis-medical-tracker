@@ -31,6 +31,7 @@ export type StreamPayloadMap = {
     emergencyFacilityId: string | null
     emergencyFacilityName: string | null
     occupiedBedsIncrease: number | null
+    respondingAmbulanceIds?: string[]
   }
 }
 

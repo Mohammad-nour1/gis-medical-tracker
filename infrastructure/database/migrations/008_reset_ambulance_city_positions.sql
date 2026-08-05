@@ -1,0 +1,26 @@
+UPDATE ambulances SET status = 'available' WHERE status <> 'available';
+
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.2900, 33.5100), 4326)::geography WHERE code = 'AMB-DMS-01';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(37.1500, 36.2000), 4326)::geography WHERE code = 'AMB-ALP-02';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.7200, 34.7400), 4326)::geography WHERE code = 'AMB-HMS-03';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(35.7985, 35.5318), 4326)::geography WHERE code = 'AMB-LTK-04';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.2650, 33.5050), 4326)::geography WHERE code = 'AMB-DMS-05';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(37.1200, 36.1900), 4326)::geography WHERE code = 'AMB-ALP-06';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.7400, 35.1400), 4326)::geography WHERE code = 'AMB-HMA-07';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(35.8985, 34.8910), 4326)::geography WHERE code = 'AMB-TRS-08';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.6500, 35.9200), 4326)::geography WHERE code = 'AMB-IDL-09';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(40.1500, 35.3300), 4326)::geography WHERE code = 'AMB-DEZ-10';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(39.0200, 35.9400), 4326)::geography WHERE code = 'AMB-RQA-11';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(40.7500, 36.5000), 4326)::geography WHERE code = 'AMB-HSK-12';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.5600, 32.7000), 4326)::geography WHERE code = 'AMB-SWD-13';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(38.2700, 34.5500), 4326)::geography WHERE code = 'AMB-PLM-14';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(35.8300, 33.1200), 4326)::geography WHERE code = 'AMB-QNT-15';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.3900, 33.4800), 4326)::geography WHERE code = 'AMB-RDS-16';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.3005, 33.5095), 4326)::geography WHERE code = 'AMB-DMS-17';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.2700, 33.5050), 4326)::geography WHERE code = 'AMB-DMS-18';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.2925, 33.5125), 4326)::geography WHERE code = 'AMB-DMS-19';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.2605, 33.4990), 4326)::geography WHERE code = 'AMB-DMS-20';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.3110, 33.5175), 4326)::geography WHERE code = 'AMB-DMS-21';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.2865, 33.5005), 4326)::geography WHERE code = 'AMB-DMS-22';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.4000, 33.5700), 4326)::geography WHERE code = 'AMB-RDS-23';
+UPDATE ambulances SET location = ST_SetSRID(ST_MakePoint(36.3660, 33.5570), 4326)::geography WHERE code = 'AMB-RDS-24';

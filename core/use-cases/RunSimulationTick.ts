@@ -58,23 +58,20 @@ export class RunSimulationTick {
 
     await this.facilityRepository.updateOccupiedBeds(targetFacility.id, nextOccupied)
 
-    const movedAmbulanceIds: string[] = []
     const ambulances = await this.ambulanceRepository.findAll()
     const available = ambulances.filter(ambulance => ambulance.status === 'available')
     const responding = pickNearestAmbulances(available, targetFacility.location, 2)
-    const respondingIds = new Set(responding.map(ambulance => ambulance.id))
+    const movedAmbulanceIds: string[] = []
     const recordedAt = new Date()
 
     await Promise.all(
-      ambulances.map(async ambulance => {
-        const movement = respondingIds.has(ambulance.id)
-          ? ScenarioGenerator.createDirectedMovement(
-            ambulance.id,
-            ambulance.location,
-            targetFacility.location,
-            0.18
-          )
-          : ScenarioGenerator.createIncrementalMovement(ambulance.id, ambulance.location)
+      responding.map(async ambulance => {
+        const movement = ScenarioGenerator.createDirectedMovement(
+          ambulance.id,
+          ambulance.location,
+          targetFacility.location,
+          0.12
+        )
 
         await this.ambulanceRepository.updateLocation(ambulance.id, movement.newLocation)
         movedAmbulanceIds.push(ambulance.id)
@@ -93,23 +90,24 @@ export class RunSimulationTick {
           ambulanceId: ambulance.id,
           location: movement.newLocation,
           headingDeg: movement.headingDeg,
-          targetFacilityId: respondingIds.has(ambulance.id) ? targetFacility.id : null
+          targetFacilityId: targetFacility.id
         })
       })
     )
-
-    const refreshedTarget = await this.facilityRepository.findById(targetFacility.id)
-    if (refreshedTarget) {
-      await this.processFacilityMonitoringCycle.execute(refreshedTarget)
-    }
 
     await this.realtimeBroadcaster.broadcast('medical-stream', 'simulation-tick', {
       processedCount: 1,
       triggeredAt: new Date().toISOString(),
       emergencyFacilityId: targetFacility.id,
       emergencyFacilityName: targetFacility.name,
-      occupiedBedsIncrease: emergency.occupiedBedsIncrease
+      occupiedBedsIncrease: emergency.occupiedBedsIncrease,
+      respondingAmbulanceIds: movedAmbulanceIds
     })
+
+    const refreshedTarget = await this.facilityRepository.findById(targetFacility.id)
+    if (refreshedTarget) {
+      await this.processFacilityMonitoringCycle.execute(refreshedTarget)
+    }
 
     return {
       processedCount: 1,

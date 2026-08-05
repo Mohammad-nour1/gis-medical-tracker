@@ -686,16 +686,19 @@ select.control {
   position: absolute;
   left: 50%;
   top: 0;
-  transform-origin: 50% 220%;
-  font-size: 16px;
-  line-height: 1;
+  margin-left: -5px;
+  width: 10px;
+  height: 10px;
+  transform-origin: 50% 85%;
+  font-size: 9px;
+  line-height: 10px;
+  text-align: center;
   color: #ffffff;
   text-shadow:
-    -1px -1px 0 #03141c,
-    1px -1px 0 #03141c,
-    -1px 1px 0 #03141c,
-    1px 1px 0 #03141c,
-    0 0 8px rgba(251, 191, 36, 0.9);
+    -0.5px -0.5px 0 #03141c,
+    0.5px -0.5px 0 #03141c,
+    -0.5px 0.5px 0 #03141c,
+    0.5px 0.5px 0 #03141c;
   pointer-events: none;
 }
 

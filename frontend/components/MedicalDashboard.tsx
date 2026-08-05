@@ -127,7 +127,6 @@ function DashboardBody() {
 
   useEffect(() => {
     if (!latestTickId || isHistoricalView) return
-    refreshData()
     if (simulationRunning && latestTick) {
       const facilityName = latestTick.payload.emergencyFacilityName
       const bedsIncrease = latestTick.payload.occupiedBedsIncrease
@@ -138,6 +137,9 @@ function DashboardBody() {
       )
       setStatsPulse(true)
       const timer = window.setTimeout(() => setStatsPulse(false), 700)
+      window.setTimeout(() => {
+        void refreshData()
+      }, 0)
       return () => window.clearTimeout(timer)
     }
   }, [latestTickId, latestTick, isHistoricalView, refreshData, simulationRunning])

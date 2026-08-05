@@ -40,21 +40,24 @@ function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, e
   const color = status === 'dispatched' || enRoute
     ? designTokens.color.ambulanceDispatched
     : designTokens.color.ambulanceAvailable
-  const size = designTokens.map.ambulanceMarkerSize + (enRoute ? 6 : 2)
-  const glow = status === 'dispatched' || enRoute ? 'rgba(251,191,36,0.65)' : 'rgba(56,189,248,0.55)'
-  const showArrow = Boolean(enRoute)
+  const size = designTokens.map.ambulanceMarkerSize + (enRoute ? 2 : 0)
+  const glow = status === 'dispatched' || enRoute ? 'rgba(251,191,36,0.55)' : 'rgba(56,189,248,0.45)'
+  const arrowSpace = enRoute ? 9 : 0
+  const box = size + 4
+  const height = size + arrowSpace + 4
+  const diamondTop = arrowSpace + 2
   const facing = headingDeg ?? 0
-  const arrow = !showArrow
+  const arrow = !enRoute
     ? ''
-    : `<span class="ambulance-arrow" style="transform:translateX(-50%) rotate(${facing}deg);">▲</span>`
+    : `<span class="ambulance-arrow" style="transform:rotate(${facing}deg);">▲</span>`
   return L.divIcon({
     className: 'geo-marker',
-    html: `<div style="position:relative;width:${size + 16}px;height:${size + 22}px;">
+    html: `<div style="position:relative;width:${box}px;height:${height}px;">
       ${arrow}
-      <span style="position:absolute;left:50%;top:58%;width:${size}px;height:${size}px;margin-left:-${size / 2}px;margin-top:-${size / 2}px;border-radius:5px;border:2px solid #fff;background:${color};transform:rotate(45deg);box-shadow:0 0 12px ${glow};"></span>
+      <span style="position:absolute;left:50%;top:${diamondTop}px;width:${size}px;height:${size}px;margin-left:-${size / 2}px;border-radius:3px;border:2px solid #fff;background:${color};transform:rotate(45deg);box-shadow:0 0 8px ${glow};"></span>
     </div>`,
-    iconSize: [size + 16, size + 22],
-    iconAnchor: [(size + 16) / 2, (size + 22) / 2]
+    iconSize: [box, height],
+    iconAnchor: [box / 2, diamondTop + size / 2]
   })
 }
 
@@ -75,6 +78,11 @@ export function SyriaMap({
   const locationEvents = useGeoMedStreamEvents('ambulance-location')
   const dispatchEvents = useGeoMedStreamEvents('ambulance-dispatched')
   const statusEvents = useGeoMedStreamEvents('status-changed')
+  const simulationTicks = useGeoMedStreamEvents('simulation-tick')
+  const respondingAmbulanceIds = useMemo(() => {
+    const ids = simulationTicks[0]?.payload.respondingAmbulanceIds
+    return new Set(ids ?? [])
+  }, [simulationTicks])
 
   const liveAmbulances = useMemo(() => {
     if (historicalMode) return ambulances
@@ -101,16 +109,31 @@ export function SyriaMap({
     for (const [ambulanceId, event] of latestLocationByAmbulance) {
       const current = next.get(ambulanceId)
       if (!current) continue
+      const enRoute = respondingAmbulanceIds.size > 0
+        ? respondingAmbulanceIds.has(ambulanceId)
+        : Boolean(event.payload.targetFacilityId)
       next.set(ambulanceId, {
         ...current,
         location: event.payload.location,
-        headingDeg: event.payload.headingDeg,
-        targetFacilityId: event.payload.targetFacilityId ?? null
+        headingDeg: enRoute ? event.payload.headingDeg : undefined,
+        targetFacilityId: enRoute ? (event.payload.targetFacilityId ?? null) : null
       })
     }
 
+    if (respondingAmbulanceIds.size > 0) {
+      for (const [ambulanceId, ambulance] of next) {
+        if (!respondingAmbulanceIds.has(ambulanceId) && ambulance.targetFacilityId) {
+          next.set(ambulanceId, {
+            ...ambulance,
+            headingDeg: undefined,
+            targetFacilityId: null
+          })
+        }
+      }
+    }
+
     return Array.from(next.values())
-  }, [ambulances, locationEvents, dispatchEvents, historicalMode])
+  }, [ambulances, locationEvents, dispatchEvents, historicalMode, respondingAmbulanceIds])
 
   const liveFacilities = useMemo(() => {
     if (historicalMode) return facilities
@@ -249,9 +272,9 @@ export function SyriaMap({
     const target = liveFacilities.find(facility => facility.id === focusFacilityId)
     if (!target) return
     lastFocusTokenRef.current = token
-    map.flyTo([target.location.latitude, target.location.longitude], Math.max(map.getZoom(), 9), {
+    map.flyTo([target.location.latitude, target.location.longitude], Math.max(map.getZoom(), 8), {
       animate: true,
-      duration: 0.55
+      duration: 0.28
     })
   }, [focusFacilityId, focusToken, liveFacilities, historicalMode])
 
