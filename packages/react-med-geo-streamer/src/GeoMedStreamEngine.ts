@@ -29,7 +29,7 @@ export class GeoMedStreamEngine {
     this.updateSnapshot({ connectionStatus: 'connecting', lastError: null })
 
     this.socket = io(this.config.serverUrl, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 10
     })

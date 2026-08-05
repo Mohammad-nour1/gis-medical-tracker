@@ -211,7 +211,7 @@ function DashboardBody() {
     setIsBusy(true)
     try {
       const result = await triggerSimulationTick()
-      setSuccessMessage(`Simulation tick processed ${result.processedCount} facilities`)
+      setSuccessMessage(`Simulation tick processed ${result.processedCount} emergency facility`)
     } catch (error) {
       setErrorMessage(resolveUserMessage(error, 'Simulation tick failed'))
     } finally {
@@ -329,6 +329,7 @@ function DashboardBody() {
                 ambulances={ambulances}
                 historicalMode={isHistoricalView}
                 focusFacilityId={simulationRunning ? latestTick?.payload.emergencyFacilityId ?? null : null}
+                focusToken={simulationRunning ? latestTickId ?? null : null}
               />
             </div>
           </section>

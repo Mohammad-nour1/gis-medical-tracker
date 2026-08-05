@@ -65,45 +65,46 @@ export class RunSimulationTick {
     const respondingIds = new Set(responding.map(ambulance => ambulance.id))
     const recordedAt = new Date()
 
-    for (const ambulance of ambulances) {
-      const movement = respondingIds.has(ambulance.id)
-        ? ScenarioGenerator.createDirectedMovement(
-          ambulance.id,
-          ambulance.location,
-          targetFacility.location,
-          0.18
+    await Promise.all(
+      ambulances.map(async ambulance => {
+        const movement = respondingIds.has(ambulance.id)
+          ? ScenarioGenerator.createDirectedMovement(
+            ambulance.id,
+            ambulance.location,
+            targetFacility.location,
+            0.18
+          )
+          : ScenarioGenerator.createIncrementalMovement(ambulance.id, ambulance.location)
+
+        await this.ambulanceRepository.updateLocation(ambulance.id, movement.newLocation)
+        movedAmbulanceIds.push(ambulance.id)
+
+        await this.ambulanceLocationSnapshotRepository.record(
+          new AmbulanceLocationSnapshot(
+            this.idGenerator.generate(),
+            ambulance.id,
+            movement.newLocation,
+            ambulance.status,
+            recordedAt
+          )
         )
-        : ScenarioGenerator.createIncrementalMovement(ambulance.id, ambulance.location)
 
-      await this.ambulanceRepository.updateLocation(ambulance.id, movement.newLocation)
-      movedAmbulanceIds.push(ambulance.id)
-
-      await this.ambulanceLocationSnapshotRepository.record(
-        new AmbulanceLocationSnapshot(
-          this.idGenerator.generate(),
-          ambulance.id,
-          movement.newLocation,
-          ambulance.status,
-          recordedAt
-        )
-      )
-
-      await this.realtimeBroadcaster.broadcast('medical-stream', 'ambulance-location', {
-        ambulanceId: ambulance.id,
-        location: movement.newLocation,
-        headingDeg: movement.headingDeg,
-        targetFacilityId: respondingIds.has(ambulance.id) ? targetFacility.id : null
+        await this.realtimeBroadcaster.broadcast('medical-stream', 'ambulance-location', {
+          ambulanceId: ambulance.id,
+          location: movement.newLocation,
+          headingDeg: movement.headingDeg,
+          targetFacilityId: respondingIds.has(ambulance.id) ? targetFacility.id : null
+        })
       })
-    }
+    )
 
-    const updatedFacilities = await this.facilityRepository.findAll()
-
-    for (const facility of updatedFacilities) {
-      await this.processFacilityMonitoringCycle.execute(facility)
+    const refreshedTarget = await this.facilityRepository.findById(targetFacility.id)
+    if (refreshedTarget) {
+      await this.processFacilityMonitoringCycle.execute(refreshedTarget)
     }
 
     await this.realtimeBroadcaster.broadcast('medical-stream', 'simulation-tick', {
-      processedCount: updatedFacilities.length,
+      processedCount: 1,
       triggeredAt: new Date().toISOString(),
       emergencyFacilityId: targetFacility.id,
       emergencyFacilityName: targetFacility.name,
@@ -111,7 +112,7 @@ export class RunSimulationTick {
     })
 
     return {
-      processedCount: updatedFacilities.length,
+      processedCount: 1,
       emergencyFacilityId: targetFacility.id,
       movedAmbulanceIds
     }

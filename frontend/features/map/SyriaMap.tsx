@@ -14,6 +14,7 @@ type SyriaMapProps = {
   ambulances: AmbulanceRecord[]
   historicalMode: boolean
   focusFacilityId?: string | null
+  focusToken?: string | null
 }
 
 function facilityIcon(status: FacilityRecord['status'], emphasized: boolean) {
@@ -41,7 +42,7 @@ function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, e
     : designTokens.color.ambulanceAvailable
   const size = designTokens.map.ambulanceMarkerSize + (enRoute ? 6 : 2)
   const glow = status === 'dispatched' || enRoute ? 'rgba(251,191,36,0.65)' : 'rgba(56,189,248,0.55)'
-  const showArrow = enRoute || headingDeg != null
+  const showArrow = Boolean(enRoute)
   const facing = headingDeg ?? 0
   const arrow = !showArrow
     ? ''
@@ -57,13 +58,19 @@ function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, e
   })
 }
 
-export function SyriaMap({ facilities, ambulances, historicalMode, focusFacilityId = null }: SyriaMapProps) {
+export function SyriaMap({
+  facilities,
+  ambulances,
+  historicalMode,
+  focusFacilityId = null,
+  focusToken = null
+}: SyriaMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const facilityClusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const ambulanceLayerRef = useRef<L.LayerGroup | null>(null)
   const ambulanceMarkersRef = useRef<Map<string, L.Marker>>(new Map())
-  const lastFocusRef = useRef<string | null>(null)
+  const lastFocusTokenRef = useRef<string | null>(null)
 
   const locationEvents = useGeoMedStreamEvents('ambulance-location')
   const dispatchEvents = useGeoMedStreamEvents('ambulance-dispatched')
@@ -237,15 +244,16 @@ export function SyriaMap({ facilities, ambulances, historicalMode, focusFacility
   useEffect(() => {
     const map = mapRef.current
     if (!map || !focusFacilityId || historicalMode) return
-    if (lastFocusRef.current === focusFacilityId) return
+    const token = focusToken ?? focusFacilityId
+    if (lastFocusTokenRef.current === token) return
     const target = liveFacilities.find(facility => facility.id === focusFacilityId)
     if (!target) return
-    lastFocusRef.current = focusFacilityId
+    lastFocusTokenRef.current = token
     map.flyTo([target.location.latitude, target.location.longitude], Math.max(map.getZoom(), 9), {
       animate: true,
       duration: 0.55
     })
-  }, [focusFacilityId, liveFacilities, historicalMode])
+  }, [focusFacilityId, focusToken, liveFacilities, historicalMode])
 
   return <div ref={mapContainerRef} className="map-shell" />
 }
