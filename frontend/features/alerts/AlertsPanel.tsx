@@ -13,7 +13,9 @@ export function AlertsPanel() {
         <span className="status-pill" data-state={connectionStatus}>{connectionStatus}</span>
       </div>
       {alerts.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">No critical occupancy alerts</p>
+        <p className="text-sm text-[var(--color-text-muted)]">
+          Alerts appear when a facility crosses into RED (occupancy over 90%)
+        </p>
       ) : (
         <ul className="max-h-48 space-y-2 overflow-y-auto">
           {alerts.map(alert => (

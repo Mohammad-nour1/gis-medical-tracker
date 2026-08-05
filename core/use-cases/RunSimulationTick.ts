@@ -44,8 +44,7 @@ export class RunSimulationTick {
       return { processedCount: 0, emergencyFacilityId: null, movedAmbulanceIds: [] }
     }
 
-    const facilityIds = facilities.map(facility => facility.id)
-    const emergency = ScenarioGenerator.createRandomEmergency(facilityIds)
+    const emergency = ScenarioGenerator.createRandomEmergency(facilities)
     const targetFacility = await this.facilityRepository.findById(emergency.facilityId)
 
     if (!targetFacility) {

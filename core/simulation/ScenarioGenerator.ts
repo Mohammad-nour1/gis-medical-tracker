@@ -1,4 +1,4 @@
-import { Coordinates } from '../entities/Facility'
+import { Coordinates, Facility } from '../entities/Facility'
 
 export type EmergencyScenario = {
   facilityId: string
@@ -20,11 +20,21 @@ const SYRIA_BOUNDS = {
 }
 
 export class ScenarioGenerator {
-  static createRandomEmergency(facilityIds: string[]): EmergencyScenario {
-    const randomFacilityId = facilityIds[Math.floor(Math.random() * facilityIds.length)]
+  static createRandomEmergency(facilities: Facility[]): EmergencyScenario {
+    const greenCandidates = facilities.filter(facility => facility.status === 'GREEN' && facility.totalBeds > 0)
+    const pool = greenCandidates.length > 0 ? greenCandidates : facilities
+    const target = pool[Math.floor(Math.random() * pool.length)]
+
+    const thresholdOccupied = Math.floor(target.totalBeds * 0.9) + 1
+    const neededToCross = Math.max(0, thresholdOccupied - target.occupiedBeds)
+    const occupiedBedsIncrease = Math.min(
+      target.totalBeds - target.occupiedBeds,
+      Math.max(neededToCross, 8) + Math.floor(Math.random() * 5)
+    )
+
     return {
-      facilityId: randomFacilityId,
-      occupiedBedsIncrease: Math.floor(Math.random() * 11) + 8,
+      facilityId: target.id,
+      occupiedBedsIncrease: Math.max(1, occupiedBedsIncrease),
       triggeredAt: new Date()
     }
   }
