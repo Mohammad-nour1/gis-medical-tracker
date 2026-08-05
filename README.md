@@ -1,21 +1,29 @@
 # GIS Medical Dashboard
 
-لوحة مراقبة للقطاع الصحي في سوريا. تعرض إشغال المنشآت الطبية وتوزّع سيارات الإسعاف على الخريطة، وتطبّق مخطط المراقبة في الزمن الفعلي.
+لوحة مراقبة طبية اعتماداً على GIS لمديري القطاع الصحي في سوريا: إشغال المنشآت، تتبّع الإسعاف، تنبيهات لحظية، توجيه يدوي، وTime Machine.
 
-المستودع: https://github.com/Mohammad-nour1/gis-medical-tracker
+- **GitHub:** https://github.com/Mohammad-nour1/gis-medical-tracker
+- **Live Demo:** https://gis-medical-tracker-production.up.railway.app
+
+---
 
 ## التشغيل المحلي
 
-1. `npm install`
-2. انسخ `.env.example` إلى `.env.local` واملأ `DATABASE_URL`
-3. نفّذ على PostgreSQL/PostGIS الملف:
-   `infrastructure/database/migrations/000_full_setup.sql`
-   وإذا القاعدة موجودة مسبقاً وتحتاج توسيع دمشق فقط:
-   `infrastructure/database/migrations/005_expand_damascus_hospitals.sql`
-4. `npm run dev` ثم افتح `http://localhost:3000`
-5. الاختبارات: `npm test`
+```bash
+npm install
+cp .env.example .env.local   # Windows: copy .env.example .env.local
+```
 
-متغيرات `.env.local`:
+املأ `DATABASE_URL`، ثم نفّذ على Postgres/PostGIS:
+
+`infrastructure/database/migrations/000_full_setup.sql`
+
+```bash
+npm run dev    # http://localhost:3000
+npm test
+```
+
+Variables:
 
 ```
 DATABASE_URL=...
@@ -24,75 +32,79 @@ HOSTNAME=0.0.0.0
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
 ```
 
-## ماذا يغطي المشروع
+---
 
-- خريطة سوريا مع تجميع النقاط وفلاتر حسب النوع والمحافظة والحالة
-- حساب الإشغال وتحويل الحالة إلى RED أو GREEN عند تجاوز 90٪
-- البحث عن أقرب إسعاف متاح عبر PostGIS `ST_Distance` ثم التوجيه
-- تنبيهات حرجة وبث حي عبر Socket.io
-- Simulation لتغذية السيناريوهات
-- توجيه يدوي + Time Machine لقطات الإشغال ومواقع الإسعاف
+## مطابقة المتطلبات
 
-## أزرار اللوحة
+| المطلوب | الحالة |
+|---|---|
+| Next.js + Express + Postgres/PostGIS | مُنفَّذ |
+| `react-med-geo-streamer@2.1` لحالة الـ WebSocket | مُنفَّذ محلياً (`packages/…`، غير منشور على npm) |
+| Socket.io اتصال مستمر للبث الحي | مُنفَّذ عبر `server.ts` |
+| خريطة سوريا + Clustering + فلاتر | مُنفَّذ |
+| مخطط المراقبة: إشغال → 90% → RED/GREEN → أقرب إسعاف → توجيه | مُنفَّذ حرفياً في `core/use-cases` |
+| Time Machine (تاريخ/وقت + snapshots) | مُنفَّذ |
+| تنبيهات + توجيه يدوي | مُنفَّذ |
+| Simulation لتغذية سيناريوهات | مُنفَّذ (سكريبت/محرّك سيناريو، بدون LLM) |
+| نشر Serverless على Vercel + Socket.io دائم | **تعارض معماري** → انظر القرارات أدناه (النشر التشغيلي على Railway) |
 
-- **Run Monitoring**: تشغيل دورة المخطط مرة واحدة على المنشآت الحالية
-- **Simulation Tick**: تحديث إشغال وهمي واحد ثم مراقبة
-- **Start / Stop Simulation**: تحديث كل ~1.2 ثانية؛ أقرب إسعافين يتحركون بسرعة نحو المشفى مع سهم أبيض واضح
+---
+
+## الميزات في الواجهة
+
+- **Filters:** نوع المنشأة / المحافظة / RED|GREEN / إخفاء أو حالة الإسعاف
+- **Run Monitoring:** دورة المخطط مرة واحدة على كل المنشآت
+- **Start Simulation:** ضغط متكرّر على مستشفى واحد لعدة تيكات → أقرب إسعافين يتحركون → تنبيه عند GREEN→RED
+- **Emergency Alerts:** عند تجاوز العتبة فقط (تحول إلى RED)
+- **Manual Dispatch:** اختيار منشأة + إسعاف متاح وإرسال
+- **Time Machine:** presets أو تاريخ/وقت → View Snapshot → Return Live  
+  (يحتاج snapshots؛ شغّل Monitoring أو Simulation مرة قبلها)
+
+على الخريطة: أخضر/أحمر للمنشآت، أزرق=إسعاف متاح، أصفر=مُرسل، سهم أبيض=متجه للطوارئ الحالية.
+
+---
 
 ## البنية
 
-| المجلد | الدور |
+| مسار | دور |
 |---|---|
-| `core` | الكيانات وحالات الاستخدام والمخطط |
-| `infrastructure` | PostgreSQL/PostGIS وSocket.io |
-| `interface` | Express API وWebSocket gateway |
-| `frontend` | لوحة التحكم |
-| `packages/react-med-geo-streamer` | طبقة متوافقة مع المكتبة المطلوبة `2.1.0` |
+| `core/` | كيانات + حالات استخدام المخطط |
+| `infrastructure/` | Postgres/PostGIS + Socket broadcaster |
+| `interface/` | Express API + Socket gateway |
+| `frontend/` | Dashboard |
+| `packages/react-med-geo-streamer/` | Stream state @2.1.0 |
+| `server.ts` | Next + Express + Socket.io في عملية واحدة |
 
-نقاط الدخول: `server.ts` يجمع Next وExpress وSocket.io على سيرفر واحد.
+---
 
-## لماذا هذه التقنيات
+## Architectural Decisions
 
-- **Next.js + TypeScript**: الواجهة والتطبيق ضمن بيئة موحّدة.
-- **Express**: طبقة HTTP رقيقة فوق حالات الاستخدام كما هو مطلوب.
-- **PostgreSQL + PostGIS**: الاستعلامات المكانية لأقرب إسعاف.
-- **Socket.io**: اتصال مستمر للبث الحي.
-- **react-med-geo-streamer@2.1**: مصدر حقيقة حالة البث في الواجهة؛ الحزمة غير متوفرة على npm فبنيت محلياً بنفس الاسم والإصدار.
-- **Hexagonal**: عزل منطق المخطط عن تفاصيل القاعدة والبث.
+**Vercel Serverless + Socket.io persistent TCP cannot both be satisfied literally.**  
+Vercel functions are short-lived and do not hold persistent WebSocket/TCP connections. Socket.io needs a long-running Node process. Deployment therefore uses **Railway** with custom `server.ts` (same Next UI + Express API + Socket.io). The README requirement to document this trade-off is intentional, not an omission.
 
-## قرارات مهمة
+**react-med-geo-streamer@2.1** is not available on the public npm registry. A compatible local package with the same name and version is used so the frontend never owns WebSocket state in ad-hoc React `useState`.
 
-1. **Vercel Serverless لا يكفي لوحده مع Socket.io** لأن الاتصال يحتاج عملية Node مستمرة، لذلك النشر التشغيلي على Railway عبر `server.ts`.
-2. **مسار GREEN في المخطط لا يُختصر**؛ الحالة تمر بإلزام على `AssignRouteAndDispatch` حتى لو لم تُخصَّص سيارة.
-3. **Time Machine** يعتمد على `occupancy_snapshots` و`ambulance_location_snapshots`.
+**PostGIS:** nearest available ambulance uses `ST_Distance` on geography points (`infrastructure/database/PostGISDistanceCalculator.ts`).
 
-## النشر على Railway
+**Flowchart fidelity:** occupancy → threshold 90% → status → if RED find nearest + dispatch; GREEN still passes through `AssignRouteAndDispatch` with no ambulance. Covered by unit tests under `core/use-cases/__tests__/`.
 
-1. اربط المستودع بمشروع Railway.
-2. ولّد Public Domain للخدمة.
-3. أضف المتغيرات:
-   - `DATABASE_URL` من Supabase
-   - `HOSTNAME=0.0.0.0`
-   - `PORT=8080`
-   - `NEXT_PUBLIC_SOCKET_URL=https://<your-public-domain>`
-4. Build: `npm run build` — Start: `npm run start`
-5. تحقق من `/api/health` ثم الصفحة الرئيسة.
-6. نفّذ Simulation Tick مرة قبل تجربة Time Machine.
+**Hexagonal layout** keeps the flowchart independent from Express/pg/Socket details.
 
-Live Demo: يُحدَّث هنا بعد نجاح النشر العام.
+---
 
-## API
+## Railway
 
-- `GET /api/health`
-- `GET /api/facilities`
-- `GET /api/ambulances`
-- `GET /api/history`
-- `POST /api/monitoring/run`
-- `POST /api/simulation/tick`
-- `POST /api/simulation/start`
-- `POST /api/simulation/stop`
-- `POST /api/dispatch/manual`
+1. Connect the GitHub repo  
+2. Env: `DATABASE_URL`, `HOSTNAME=0.0.0.0`, `PORT=8080`, `NEXT_PUBLIC_SOCKET_URL=https://<public-domain>`  
+3. Build `npm run build` · Start `npm run start`  
+4. Check `/api/health`
 
-## أحداث البث
+---
 
-`occupancy-critical` · `status-changed` · `ambulance-dispatched` · `ambulance-location` · `simulation-tick`
+## API / Events
+
+`GET` `/api/health` · `/api/facilities` · `/api/ambulances` · `/api/history`  
+
+`POST` `/api/monitoring/run` · `/api/simulation/tick|start|stop` · `/api/dispatch/manual`
+
+Socket events: `occupancy-critical` · `status-changed` · `ambulance-dispatched` · `ambulance-location` · `simulation-tick`
