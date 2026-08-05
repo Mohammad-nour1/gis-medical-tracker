@@ -15,6 +15,7 @@ import {
   toOccupancySnapshotDto,
   toRouteAssignmentDto
 } from '../dto/responseDtos'
+import { ScenarioGenerator } from '../../../core/simulation/ScenarioGenerator'
 
 let simulationInterval: NodeJS.Timeout | null = null
 let simulationTickInFlight = false
@@ -115,4 +116,5 @@ function stopSimulationLoop(): void {
     simulationInterval = null
   }
   simulationTickInFlight = false
+  ScenarioGenerator.resetDemoFocus()
 }

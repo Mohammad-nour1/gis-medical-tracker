@@ -6,6 +6,7 @@ import { CalculateAvailableBeds } from '../CalculateAvailableBeds'
 import { DefaultOccupancyThresholdStrategy, EvaluateOccupancyStatus } from '../EvaluateOccupancyStatus'
 
 test('simulation emergency prefers GREEN and pushes occupancy past 90 percent', () => {
+  ScenarioGenerator.resetDemoFocus()
   const green = new Facility(
     'green-1',
     'Stable Hospital',

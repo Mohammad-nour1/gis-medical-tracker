@@ -13,14 +13,24 @@ type SyriaMapProps = {
   facilities: FacilityRecord[]
   ambulances: AmbulanceRecord[]
   historicalMode: boolean
+  activeEmergencyFacilityId?: string | null
+}
+
+type MotionTrack = {
+  fromLat: number
+  fromLng: number
+  toLat: number
+  toLng: number
+  startedAt: number
+  durationMs: number
 }
 
 function facilityIcon(status: FacilityRecord['status'], emphasized: boolean) {
   const color = status === 'RED' ? designTokens.color.statusRed : designTokens.color.statusGreen
-  const size = emphasized ? designTokens.map.facilityMarkerSize + 6 : designTokens.map.facilityMarkerSize
+  const size = emphasized ? designTokens.map.facilityMarkerSize + 8 : designTokens.map.facilityMarkerSize
   const glow = status === 'RED' ? 'rgba(255,92,122,0.55)' : 'rgba(45,212,160,0.55)'
   const ring = emphasized
-    ? `<span style="position:absolute;inset:-10px;border-radius:9999px;border:2px solid ${color};opacity:.55;"></span>`
+    ? `<span class="facility-pulse-ring" style="border-color:${color};"></span>`
     : ''
   return L.divIcon({
     className: 'geo-marker',
@@ -59,16 +69,25 @@ function ambulanceIcon(status: AmbulanceRecord['status'], headingDeg?: number, e
   })
 }
 
+function easeInOut(progress: number): number {
+  return progress < 0.5
+    ? 2 * progress * progress
+    : 1 - Math.pow(-2 * progress + 2, 2) / 2
+}
+
 export function SyriaMap({
   facilities,
   ambulances,
-  historicalMode
+  historicalMode,
+  activeEmergencyFacilityId = null
 }: SyriaMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const facilityClusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const ambulanceLayerRef = useRef<L.LayerGroup | null>(null)
   const ambulanceMarkersRef = useRef<Map<string, L.Marker>>(new Map())
+  const motionTracksRef = useRef<Map<string, MotionTrack>>(new Map())
+  const animationFrameRef = useRef<number | null>(null)
 
   const locationEvents = useGeoMedStreamEvents('ambulance-location')
   const dispatchEvents = useGeoMedStreamEvents('ambulance-dispatched')
@@ -191,6 +210,24 @@ export function SyriaMap({
 
     mapRef.current = map
 
+    const tickMotion = (now: number) => {
+      for (const [id, track] of motionTracksRef.current.entries()) {
+        const marker = ambulanceMarkersRef.current.get(id)
+        if (!marker) {
+          motionTracksRef.current.delete(id)
+          continue
+        }
+        const progress = Math.min(1, (now - track.startedAt) / track.durationMs)
+        const eased = easeInOut(progress)
+        const lat = track.fromLat + (track.toLat - track.fromLat) * eased
+        const lng = track.fromLng + (track.toLng - track.fromLng) * eased
+        marker.setLatLng([lat, lng])
+        if (progress >= 1) motionTracksRef.current.delete(id)
+      }
+      animationFrameRef.current = window.requestAnimationFrame(tickMotion)
+    }
+    animationFrameRef.current = window.requestAnimationFrame(tickMotion)
+
     const handleResize = () => {
       map.invalidateSize()
     }
@@ -199,11 +236,15 @@ export function SyriaMap({
 
     return () => {
       window.removeEventListener('resize', handleResize)
+      if (animationFrameRef.current != null) {
+        window.cancelAnimationFrame(animationFrameRef.current)
+      }
       map.remove()
       mapRef.current = null
       facilityClusterRef.current = null
       ambulanceLayerRef.current = null
       ambulanceMarkersRef.current.clear()
+      motionTracksRef.current.clear()
     }
   }, [])
 
@@ -212,10 +253,11 @@ export function SyriaMap({
     if (!cluster) return
     cluster.clearLayers()
     for (const facility of liveFacilities) {
+      const emphasized = activeEmergencyFacilityId === facility.id
       const marker = L.marker([facility.location.latitude, facility.location.longitude], {
-        icon: facilityIcon(facility.status, false),
+        icon: facilityIcon(facility.status, emphasized),
         facilityStatus: facility.status,
-        zIndexOffset: 0
+        zIndexOffset: emphasized ? 650 : 0
       } as L.MarkerOptions & { facilityStatus: FacilityRecord['status'] })
       marker.bindPopup(`
         <strong>${facility.name}</strong><br/>
@@ -225,7 +267,7 @@ export function SyriaMap({
       `)
       cluster.addLayer(marker)
     }
-  }, [liveFacilities])
+  }, [liveFacilities, activeEmergencyFacilityId])
 
   useEffect(() => {
     const layer = ambulanceLayerRef.current
@@ -237,21 +279,44 @@ export function SyriaMap({
       if (!activeIds.has(id)) {
         layer.removeLayer(marker)
         ambulanceMarkersRef.current.delete(id)
+        motionTracksRef.current.delete(id)
       }
     }
 
+    const now = performance.now()
+
     for (const ambulance of liveAmbulances) {
-      const position: L.LatLngExpression = [ambulance.location.latitude, ambulance.location.longitude]
       const enRoute = Boolean(ambulance.targetFacilityId)
       const icon = ambulanceIcon(ambulance.status, ambulance.headingDeg, enRoute)
       const existing = ambulanceMarkersRef.current.get(ambulance.id)
+
       if (existing) {
-        existing.setLatLng(position)
         existing.setIcon(icon)
         existing.setZIndexOffset(enRoute ? 700 : 200)
+        const current = existing.getLatLng()
+        const targetLat = ambulance.location.latitude
+        const targetLng = ambulance.location.longitude
+        const distance = Math.hypot(targetLat - current.lat, targetLng - current.lng)
+        if (distance < 0.00005) {
+          existing.setLatLng([targetLat, targetLng])
+          motionTracksRef.current.delete(ambulance.id)
+        } else {
+          motionTracksRef.current.set(ambulance.id, {
+            fromLat: current.lat,
+            fromLng: current.lng,
+            toLat: targetLat,
+            toLng: targetLng,
+            startedAt: now,
+            durationMs: enRoute ? 2200 : 900
+          })
+        }
         continue
       }
-      const marker = L.marker(position, { icon, zIndexOffset: enRoute ? 700 : 200 })
+
+      const marker = L.marker([ambulance.location.latitude, ambulance.location.longitude], {
+        icon,
+        zIndexOffset: enRoute ? 700 : 200
+      })
       marker.bindPopup(`<strong>${ambulance.code}</strong><br/>Status: ${ambulance.status}`)
       ambulanceMarkersRef.current.set(ambulance.id, marker)
       layer.addLayer(marker)

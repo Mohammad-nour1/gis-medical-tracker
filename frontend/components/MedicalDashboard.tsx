@@ -64,6 +64,7 @@ function DashboardBody() {
   const [simulationRunning, setSimulationRunning] = useState(false)
   const [isBusy, setIsBusy] = useState(false)
   const [statsPulse, setStatsPulse] = useState(false)
+  const [simStory, setSimStory] = useState<string | null>(null)
 
   const connectionStatus = useGeoMedConnectionStatus()
   const simulationTicks = useGeoMedStreamEvents('simulation-tick')
@@ -128,13 +129,13 @@ function DashboardBody() {
   useEffect(() => {
     if (!latestTickId || isHistoricalView) return
     if (simulationRunning && latestTick) {
-      const facilityName = latestTick.payload.emergencyFacilityName
-      const bedsIncrease = latestTick.payload.occupiedBedsIncrease
-      setSuccessMessage(
-        facilityName && bedsIncrease
-          ? `Live update · ${facilityName} (+${bedsIncrease} beds)`
-          : `Live update · ${new Date().toLocaleTimeString()}`
+      const facilityName = latestTick.payload.emergencyFacilityName ?? 'a hospital'
+      const bedsIncrease = latestTick.payload.occupiedBedsIncrease ?? 0
+      const responders = latestTick.payload.respondingAmbulanceIds?.length ?? 0
+      setSimStory(
+        `1) Pressure on ${facilityName} (+${bedsIncrease} beds)  →  2) ${responders} closest ambulance(s) moving (white arrow)  →  3) Watch for RED alert + yellow dispatch`
       )
+      setSuccessMessage(null)
       setStatsPulse(true)
       const timer = window.setTimeout(() => setStatsPulse(false), 700)
       window.setTimeout(() => {
@@ -229,12 +230,14 @@ function DashboardBody() {
       if (simulationRunning) {
         await stopSimulation()
         setSimulationRunning(false)
+        setSimStory(null)
         setSuccessMessage('Simulation stopped')
         return
       }
-      await startSimulation(1200)
+      await startSimulation(2500)
       setSimulationRunning(true)
-      setSuccessMessage('Simulation started')
+      setSimStory('Simulation started · waiting for first emergency… Zoom to Damascus, then watch one hospital for ~15 seconds.')
+      setSuccessMessage(null)
     } catch (error) {
       setErrorMessage(resolveUserMessage(error, 'Simulation control failed'))
     } finally {
@@ -315,6 +318,12 @@ function DashboardBody() {
           <FacilityFilters filter={filter} governorates={governorates} onChange={setFilter} />
           {errorMessage && <p className="alert-error" role="alert">{errorMessage}</p>}
           {successMessage && <p className="alert-success" role="status">{successMessage}</p>}
+          {simStory && (
+            <p className="sim-story" role="status">
+              <strong>Now happening</strong>
+              <span>{simStory}</span>
+            </p>
+          )}
           <section className="panel !p-0 overflow-hidden">
             <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
               <h2 className="panel-title mb-0">Operations Map</h2>
@@ -330,6 +339,9 @@ function DashboardBody() {
                 facilities={facilities}
                 ambulances={ambulances}
                 historicalMode={isHistoricalView}
+                activeEmergencyFacilityId={
+                  simulationRunning ? latestTick?.payload.emergencyFacilityId ?? null : null
+                }
               />
             </div>
           </section>

@@ -460,6 +460,52 @@ select.control {
   color: var(--color-success-text);
 }
 
+.sim-story {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem 0.85rem;
+  margin: 0;
+  border-radius: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(8, 32, 48, 0.72);
+  color: var(--color-text);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  backdrop-filter: blur(12px);
+  animation: riseIn 0.35s ease both;
+}
+
+.sim-story strong {
+  color: #7dd3fc;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.facility-pulse-ring {
+  position: absolute;
+  inset: -14px;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  opacity: 0.75;
+  animation: facilityPulse 1.6s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes facilityPulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
 .map-frame {
   position: relative;
   overflow: hidden;

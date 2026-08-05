@@ -70,7 +70,7 @@ export class RunSimulationTick {
           ambulance.id,
           ambulance.location,
           targetFacility.location,
-          0.12
+          0.035
         )
 
         await this.ambulanceRepository.updateLocation(ambulance.id, movement.newLocation)

@@ -20,16 +20,46 @@ const SYRIA_BOUNDS = {
 }
 
 export class ScenarioGenerator {
+  private static activeFacilityId: string | null = null
+  private static ticksRemaining = 0
+  private static readonly STICKY_TICKS = 6
+
+  static resetDemoFocus(): void {
+    this.activeFacilityId = null
+    this.ticksRemaining = 0
+  }
+
   static createRandomEmergency(facilities: Facility[]): EmergencyScenario {
-    const greenCandidates = facilities.filter(facility => facility.status === 'GREEN' && facility.totalBeds > 0)
-    const pool = greenCandidates.length > 0 ? greenCandidates : facilities
-    const target = pool[Math.floor(Math.random() * pool.length)]
+    let target: Facility | undefined
+
+    if (this.activeFacilityId && this.ticksRemaining > 0) {
+      target = facilities.find(facility => facility.id === this.activeFacilityId)
+    }
+
+    if (!target) {
+      const greenCandidates = facilities.filter(facility => facility.status === 'GREEN' && facility.totalBeds > 0)
+      const pool = greenCandidates.length > 0 ? greenCandidates : facilities
+      target = pool[Math.floor(Math.random() * pool.length)]
+      this.activeFacilityId = target.id
+      this.ticksRemaining = this.STICKY_TICKS
+    } else {
+      this.ticksRemaining -= 1
+    }
+
+    if (target.status === 'RED') {
+      const room = Math.max(0, target.totalBeds - target.occupiedBeds)
+      return {
+        facilityId: target.id,
+        occupiedBedsIncrease: Math.min(room, 1 + Math.floor(Math.random() * 2)),
+        triggeredAt: new Date()
+      }
+    }
 
     const thresholdOccupied = Math.floor(target.totalBeds * 0.9) + 1
     const neededToCross = Math.max(0, thresholdOccupied - target.occupiedBeds)
     const occupiedBedsIncrease = Math.min(
       target.totalBeds - target.occupiedBeds,
-      Math.max(neededToCross, 8) + Math.floor(Math.random() * 5)
+      Math.max(neededToCross, 6) + Math.floor(Math.random() * 3)
     )
 
     return {
@@ -50,14 +80,14 @@ export class ScenarioGenerator {
     ambulanceId: string,
     currentLocation: Coordinates,
     targetLocation: Coordinates,
-    stepDegrees = 0.045
+    stepDegrees = 0.035
   ): AmbulanceMovement {
     const deltaLatitude = targetLocation.latitude - currentLocation.latitude
     const deltaLongitude = targetLocation.longitude - currentLocation.longitude
     const distance = Math.hypot(deltaLatitude, deltaLongitude)
     const headingDeg = this.bearingDegrees(currentLocation, targetLocation)
 
-    if (distance < 0.008) {
+    if (distance < 0.006) {
       return {
         ambulanceId,
         newLocation: {
