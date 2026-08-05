@@ -22,7 +22,7 @@ cp .env.example .env.local   # Windows: copy .env.example .env.local
 
 ```bash
 npm run dev    # http://localhost:3000
-npm test
+npm test       # 14 automated tests (see Testing below)
 ```
 
 Variables:
@@ -33,6 +33,27 @@ PORT=3000
 HOSTNAME=0.0.0.0
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
 ```
+
+---
+
+## Testing
+
+Automated tests run with Node’s test runner:
+
+```bash
+npm test
+```
+
+Expected result: **14 passed**.
+
+| File | What it verifies |
+|---|---|
+| `core/use-cases/__tests__/occupancy.test.ts` | Available beds = total − occupied; RED/GREEN at 90% |
+| `core/use-cases/__tests__/monitoringCycle.test.ts` | Flowchart: RED → alert + nearest ambulance + dispatch; no re-dispatch if already RED; GREEN still goes through assign with no unit |
+| `core/use-cases/__tests__/simulationScenarios.test.ts` | Simulation prefers GREEN and crosses 90%; directed ambulance motion toward target |
+| `interface/http/validation/__tests__/requestValidation.test.ts` | API input validation (filters, dispatch body, simulation interval, timestamps) |
+
+These unit tests cover the flowchart conversion and request boundaries (evaluation metric: algorithm fidelity). Map UI is validated manually on the Live Demo.
 
 ---
 
