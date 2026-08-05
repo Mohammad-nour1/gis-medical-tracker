@@ -1,6 +1,7 @@
 import { FacilityRepository, FacilityFilter } from '../../core/ports/FacilityRepository'
 import { Facility, FacilityStatus, FacilityType } from '../../core/entities/Facility'
 import { governorateMatchValues, normalizeGovernorate } from '../../core/shared/governorates'
+import { normalizeFacilityName } from '../../core/shared/facilityNames'
 import { getPostgresPool } from './PostgresConnection'
 
 export class PostgresFacilityRepository implements FacilityRepository {
@@ -70,7 +71,7 @@ export class PostgresFacilityRepository implements FacilityRepository {
   private mapRowToFacility(row: Record<string, unknown>): Facility {
     return new Facility(
       row.id as string,
-      row.name as string,
+      normalizeFacilityName(String(row.name)),
       row.type as FacilityType,
       normalizeGovernorate(String(row.governorate)),
       Number(row.total_beds),

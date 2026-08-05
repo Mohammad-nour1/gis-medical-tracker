@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FacilityRecord, AmbulanceRecord } from '../../types/records'
 import { manualDispatch, ApiClientError } from '../../state/apiClient'
+import { isArabicLabel } from '../../../core/shared/facilityNames'
 
 type ManualDispatchPanelProps = {
   facilities: FacilityRecord[]
@@ -17,6 +18,19 @@ export function ManualDispatchPanel({ facilities, ambulances, onDispatched }: Ma
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const availableAmbulances = ambulances.filter(ambulance => ambulance.status === 'available')
+
+  const facilityOptions = useMemo(() => {
+    const seen = new Set<string>()
+    return [...facilities]
+      .sort((left, right) => left.name.localeCompare(right.name))
+      .filter(facility => {
+        if (isArabicLabel(facility.name)) return false
+        const key = `${facility.name}|${facility.governorate}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+  }, [facilities])
 
   async function handleSubmit() {
     if (!facilityId || !ambulanceId) {
@@ -49,7 +63,7 @@ export function ManualDispatchPanel({ facilities, ambulances, onDispatched }: Ma
           <span className="field-label">Facility</span>
           <select className="control" value={facilityId} onChange={event => setFacilityId(event.target.value)}>
             <option value="">Select facility</option>
-            {facilities.map(facility => (
+            {facilityOptions.map(facility => (
               <option key={facility.id} value={facility.id}>{facility.name}</option>
             ))}
           </select>
