@@ -137,7 +137,7 @@ So the 25% realtime/constraint metric is satisfied by: **using the mandated stac
 
 **Flowchart fidelity:** occupancy → 90% threshold → RED/GREEN → if RED find nearest + dispatch; GREEN still goes through `AssignRouteAndDispatch` with no unit. Tests: `core/use-cases/__tests__/`.
 
-**Hexagonal layout** isolates the flowchart from Express/pg/Socket details.
+**Hexagonal + DI:** flowchart use cases depend on ports; `createApplicationContainer` wires Postgres/PostGIS/Socket adapters via constructor injection. Unit tests inject fakes the same way.
 
 
 ---
