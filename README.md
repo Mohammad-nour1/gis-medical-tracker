@@ -98,6 +98,10 @@ These unit tests cover the flowchart conversion and request boundaries (evaluati
 | `packages/react-med-geo-streamer/` | Stream state @2.1.0 |
 | `server.ts` | Next + Express + Socket.io في عملية واحدة |
 
+**Dependency injection:** constructor injection عبر composition root في  
+`interface/http/createContainer.ts`.  
+`core/` يعتمد على ports (واجهات) فقط؛ Postgres/PostGIS/Socket يُحقنون كـ adapters من الخارج، وفي الاختبارات تُحقن fakes بدل البنية التحتية الحقيقية.
+
 ---
 
 ## Design system
